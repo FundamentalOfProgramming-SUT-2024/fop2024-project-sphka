@@ -1,0 +1,26 @@
+#include "base.h"
+
+typedef struct {
+    char c;
+} Tile;
+
+typedef struct {
+    Coord p0, p1;
+
+    int is_gone;
+
+    int n_doors;
+    Coord doors[4];
+} Room;
+
+#define MAXLINES 32
+#define MAXCOLS  80
+// #define TILE(coord) tiles[coord.x * MAXCOLS + coord.y]
+#define TILE(x, y) tiles[x * MAXCOLS + y]
+typedef struct {
+    Tile tiles[MAXLINES * MAXCOLS];
+
+    Room rooms[9];
+} Floor;
+
+void GenerateFloor(Floor *floor);
