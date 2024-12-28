@@ -4,7 +4,7 @@ static inline float randf() {
     return (float)rand() / RAND_MAX;
 }
 
-static inline float randn(int range) {
+static inline int randn(int range) {
     if (!range)
         return 0;
 

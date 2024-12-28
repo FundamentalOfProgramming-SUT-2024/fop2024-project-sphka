@@ -1,5 +1,4 @@
 #include "game_screen.h"
-#include "../mapgen.h"
 
 #include <stdlib.h>
 #include <string.h>

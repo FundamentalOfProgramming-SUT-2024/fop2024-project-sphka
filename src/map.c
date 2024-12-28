@@ -19,6 +19,19 @@ void GenerateFloor(Floor *floor) {
     for (int x = 0; x < MAXLINES; x++)
         for (int y = 0; y < MAXCOLS; y++)
             floor->tiles[x * MAXCOLS + y].c = ' ';
+    
+    for (int i = 0; i < 9; i++)
+        floor->rooms[i].is_gone = 0;
+
+    for (int i = 0; i < randn(4); i++) {
+        Room *room_to_be_gone;
+
+        do {
+            room_to_be_gone = &floor->rooms[randn(9)];
+        } while (room_to_be_gone->is_gone);
+
+        room_to_be_gone->is_gone = 1;
+    }
 
     int cellh = MAXLINES / 3;
     int cellw = MAXCOLS / 3;
@@ -26,15 +39,9 @@ void GenerateFloor(Floor *floor) {
         for (int j = 0; j < 3; j++) {
             Room *room = &floor->rooms[i * 3 + j];
             room->n_doors = 0;
-            room->is_gone = 0;
 
 
-            if (randf() < 0.1) {
-            // if (i == j && i == 1) {
-            // if (0) {
-            // {
-                room->is_gone = 1;
-
+            if (room->is_gone) {
                 int x0 = i * cellh + cellh / 3 + randn(cellh / 3);
                 int y0 = j * cellw + cellw / 3 + randn(cellw / 3);
 
@@ -69,35 +76,11 @@ void GenerateFloor(Floor *floor) {
                     else if (x == x0 || x == x1 - 1) 
                         c = '-';
 
-                    // if (
-                    //     (x == (x0 + x1) / 2 && (y == y0 || y == y1 - 1)) ||
-                    //     (y == (y0 + y1) / 2 && (x == x0 || x == x1 - 1))
-                    // )
-                    //     c = '+';
                     floor->TILE(x, y).c = c;
                 }
         }
 
     DoCorridors(floor);
-
-#if 0
-    floor->tiles[cellh * MAXCOLS + cellw / 2].c = '#';
-    floor->tiles[cellh * MAXCOLS + cellw / 2 + cellw].c = '#';
-    floor->tiles[cellh * MAXCOLS + cellw / 2 + cellw * 2].c = '#';
-
-    floor->tiles[cellh * 2 * MAXCOLS + cellw / 2].c = '#';
-    floor->tiles[cellh * 2 * MAXCOLS + cellw / 2 + cellw].c = '#';
-    floor->tiles[cellh * 2 * MAXCOLS + cellw / 2 + cellw * 2].c = '#';
-
-    floor->tiles[(cellh / 2 + cellh * 0) * MAXCOLS + cellw].c = '#';
-    floor->tiles[(cellh / 2 + cellh * 0) * MAXCOLS + cellw * 2].c = '#';
-
-    floor->tiles[(cellh / 2 + cellh * 1) * MAXCOLS + cellw].c = '#';
-    floor->tiles[(cellh / 2 + cellh * 1) * MAXCOLS + cellw * 2].c = '#';
-
-    floor->tiles[(cellh / 2 + cellh * 2) * MAXCOLS + cellw].c = '#';
-    floor->tiles[(cellh / 2 + cellh * 2) * MAXCOLS + cellw * 2].c = '#';
-#endif
 }
 
 typedef struct {
@@ -160,7 +143,7 @@ void ConnectRooms(Floor *floor, int i, int j) {
             floor->TILE(door_max.x, door_max.y).c = '+';
         } else {
             door_max = rmax->p0;
-            floor->TILE(door_min.x, door_min.y).c = '#';
+            floor->TILE(door_max.x, door_max.y).c = '#';
         }
 
         perp_axis.x = (door_max.x > door_min.x) * 2 - 1;
@@ -186,7 +169,7 @@ void ConnectRooms(Floor *floor, int i, int j) {
             floor->TILE(door_max.x, door_max.y).c = '+';
         } else {
             door_max = rmax->p0;
-            floor->TILE(door_min.x, door_min.y).c = '#';
+            floor->TILE(door_max.x, door_max.y).c = '#';
         }
 
         perp_axis.y = (door_max.y > door_min.y) * 2 - 1;

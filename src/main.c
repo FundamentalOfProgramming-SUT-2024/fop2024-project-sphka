@@ -1,10 +1,14 @@
+#include <stdlib.h>
+#include <time.h>
 #include <ncurses.h>
+
 #include "menu.h"
 #include "screens/main_screen.h"
 #include "screens/game_screen.h"
 #include "screen.h"
 
 int main() {
+    srand(time(NULL));
     initscr();
     keypad(stdscr, TRUE);
     // raw();
