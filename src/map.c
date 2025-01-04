@@ -1,6 +1,8 @@
 #include "map.h"
 
 #include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "random.h"
 
@@ -15,23 +17,25 @@ static inline int max(int x, int y) {
     return x > y ? x : y;
 }
 
+Room *PickExistingRoom(Floor *floor) {
+    Room *room;
+    do {
+        room = &floor->rooms[randn(9)];
+    } while (room->is_gone);
+
+    return room;
+}
+
 void GenerateFloor(Floor *floor) {
     for (int x = 0; x < MAXLINES; x++)
         for (int y = 0; y < MAXCOLS; y++)
-            floor->tiles[x * MAXCOLS + y].c = ' ';
+            floor->TILE(x, y).c = ' ';
     
     for (int i = 0; i < 9; i++)
         floor->rooms[i].is_gone = 0;
 
-    for (int i = 0; i < randn(4); i++) {
-        Room *room_to_be_gone;
-
-        do {
-            room_to_be_gone = &floor->rooms[randn(9)];
-        } while (room_to_be_gone->is_gone);
-
-        room_to_be_gone->is_gone = 1;
-    }
+    for (int i = 0; i < randn(4); i++)
+        PickExistingRoom(floor)->is_gone = 1;
 
     int cellh = MAXLINES / 3;
     int cellw = MAXCOLS / 3;
@@ -83,35 +87,72 @@ void GenerateFloor(Floor *floor) {
     DoCorridors(floor);
 }
 
-typedef struct {
-    char adjacent[9];
-    char is_connected[9];
-    char covered;
-} RoomLUT;
+struct RoomLUT {
+    bool adjacent[9];
+    bool is_connected[9];
+    bool covered;
+} lut[9] = {
+    {{0, 1, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{1, 0, 1, 0, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{1, 0, 0, 0, 1, 0, 1, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{0, 0, 1, 0, 1, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{0, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{0, 0, 0, 0, 1, 0, 1, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+    {{0, 0, 0, 0, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
+};
 
 void DoCorridors(Floor *floor) {
-    static RoomLUT lut[9] = {
-        {{0, 1, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{1, 0, 1, 0, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{1, 0, 0, 0, 1, 0, 1, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{0, 0, 1, 0, 1, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{0, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{0, 0, 0, 0, 1, 0, 1, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-        {{0, 0, 0, 0, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-    };
+    for (int i = 0; i < 9; i++) {
+        memset(&lut[i].is_connected, 0, 9 * sizeof(bool));
+        lut[i].covered = false;
+    }
 
-    for (int i = 0; i < 9; i++)
-        for (int j = 0; j < 9; j++)
-            if (lut[i].adjacent[j] && !lut[i].is_connected[j]) {
-                lut[i].is_connected[j] = 1;
-                lut[j].is_connected[i] = 1;
-                ConnectRooms(floor, i, j);
-            }
+    lut[randn(9)].covered = 1;
+    int rooms_covered = 1;
+    while (rooms_covered < 9) {
+        int r_uncovered, r_covered;
+
+        // Pick a random uncovered room
+        do {
+            r_uncovered = randn(9);
+        } while (lut[r_uncovered].covered);
+
+        int n_candidates = 0, candidates[9];
+        for (int i = 0; i < 9; i++) {
+            if (lut[r_uncovered].adjacent[i] && lut[i].covered)
+                candidates[n_candidates++] = i;
+        }
+
+        if (!n_candidates)
+            continue;
+
+        r_covered = candidates[randn(n_candidates)];
+
+        ConnectRooms(floor, r_covered, r_uncovered);
+        lut[r_uncovered].covered = 1;
+        rooms_covered++;
+    }
+
+    for (int additional_corridors = randn(5); additional_corridors--; ) {
+        int r1 = randn(9);
+
+        int n_candidates = 0, candidates[9];
+        for (int i = 0; i < 9; i++) {
+            if (lut[r1].adjacent[i] && !lut[r1].is_connected[i])
+                candidates[n_candidates++] = i;
+        }
+
+        if (n_candidates)
+            ConnectRooms(floor, r1, candidates[randn(n_candidates)]);
+    }
 }
 
 void ConnectRooms(Floor *floor, int i, int j) {
+    lut[i].is_connected[j] = 1;
+    lut[j].is_connected[i] = 1;
+
     int imin = min(i, j);
     int imax = max(i, j);
 
@@ -194,4 +235,16 @@ void ConnectRooms(Floor *floor, int i, int j) {
 
         floor->TILE(door_min.x, door_min.y).c = '#';
     }
+}
+
+Coord GetRandomCoordInRoom(Room *room) {
+    int h = room->p1.x - room->p0.x - 2;
+    int w = room->p1.y - room->p0.y - 2;
+
+    Coord out = { room->p0.x + 1 + randn(h), room->p0.y + 1 + randn(w) };
+    return out;
+}
+
+Coord GetRandomCoord(Floor *floor) {
+    return GetRandomCoordInRoom(PickExistingRoom(floor));
 }

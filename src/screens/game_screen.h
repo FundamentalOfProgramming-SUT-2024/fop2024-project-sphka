@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../map.h"
+#include "map.h"
 
 typedef struct {
-    int px, py;
+    Coord player;
 
     // char **map;
     // int mx, my;

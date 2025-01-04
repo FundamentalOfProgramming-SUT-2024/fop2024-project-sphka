@@ -1,5 +1,7 @@
 #include "menu.h"
 
+#include <ncurses.h>
+
 int MenuHandleInput(Menu *menu, int input) {
     if (input == KEY_DOWN && menu->selected < menu->n_entries - 1) {
         menu->selected++;
@@ -16,7 +18,7 @@ void MenuRender(Menu *menu, int x, int y) {
     for (int i = 0; i < menu->n_entries; i++) {
         if (i == menu->selected) {
             move(x + i, y);
-            addch('>' | COLOR_PAIR(1));
+            addch('>' | COLOR_PAIR(3));
             printw(" ");
             attron(A_REVERSE);
         } else {
@@ -26,7 +28,7 @@ void MenuRender(Menu *menu, int x, int y) {
         if (i == menu->selected) {
             attroff(A_REVERSE);
             printw(" ");
-            addch('<' | COLOR_PAIR(1));
+            addch('<' | COLOR_PAIR(3));
         } else {
             printw("  ");
         }

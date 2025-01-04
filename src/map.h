@@ -1,5 +1,7 @@
 #include "base.h"
 
+#include <stdbool.h>
+
 typedef struct {
     char c;
 } Tile;
@@ -7,7 +9,7 @@ typedef struct {
 typedef struct {
     Coord p0, p1;
 
-    int is_gone;
+    bool is_gone;
 
     int n_doors;
     Coord doors[4];
@@ -15,8 +17,8 @@ typedef struct {
 
 #define MAXLINES 32
 #define MAXCOLS  80
-// #define TILE(coord) tiles[coord.x * MAXCOLS + coord.y]
 #define TILE(x, y) tiles[x * MAXCOLS + y]
+#define TILEC(c) tiles[c.x * MAXCOLS + c.y]
 typedef struct {
     Tile tiles[MAXLINES * MAXCOLS];
 
@@ -24,3 +26,5 @@ typedef struct {
 } Floor;
 
 void GenerateFloor(Floor *floor);
+Coord GetRandomCoordInRoom(Room *room);
+Coord GetRandomCoord(Floor *floor);

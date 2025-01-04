@@ -4,7 +4,10 @@ SOURCES := $(call rwildcard,src,*.c)
 HEADERS := $(call rwildcard,src,*.h)
 
 rogue: $(SOURCES) $(HEADERS)
-	cc $(SOURCES) -o rogue -lncurses -g -Wall
+	clang $(SOURCES) -o rogue -lncurses -g -Wall -I src
+
+check: $(SOURCES) $(HEADERS)
+	clang-tidy $(SOURCES) -checks=-*,clang-analyzer-*,-clang-analyzer-cplusplus*
 
 run: rogue
 	./rogue

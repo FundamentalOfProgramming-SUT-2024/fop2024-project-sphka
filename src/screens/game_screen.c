@@ -5,11 +5,11 @@
 
 #include <ncurses.h>
 
+#include "input.h"
 
 void GameScreenInit(GameScreen *self) {
-    self->px = 6;
-    self->py = 8;
     GenerateFloor(&self->floor);
+    self->player = GetRandomCoord(&self->floor);
 }
 
 int GameScreenHandleInput(void *selfv, int input) {
@@ -18,34 +18,40 @@ int GameScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
 
-    int px = self->px;
-    int py = self->py;
+    Coord player = self->player;
+    Coord delta = InputDirection(input);
 
-    if (input == KEY_UP || input == 'w')
-        self->px--;
-    else if (input == KEY_DOWN || input == 's')
-        self->px++;
-    else if (input == KEY_RIGHT || input == 'd')
-        self->py++;
-    else if (input == KEY_LEFT || input == 'a')
-        self->py--;
+    self->player.x += delta.x;
+    self->player.y += delta.y;
 
-    if (self->px >= MAXLINES || self->py >= MAXCOLS || self->px <= 0 || self->py <= 0) {
-        self->px = px;
-        self->py = py;
+    // if (input == KEY_UP || input == 'w')
+    //     self->player.x--;
+    // else if (input == KEY_DOWN || input == 's')
+    //     self->player.x++;
+    // else if (input == KEY_RIGHT || input == 'd')
+    //     self->player.y++;
+    // else if (input == KEY_LEFT || input == 'a')
+    //     self->player.y--;
+
+    if (input == 'r') {
+        GenerateFloor(&self->floor);
+        self->player = GetRandomCoord(&self->floor);
+    }
+
+#if 0
+    if (self->player.x >= MAXLINES || self->player.y >= MAXCOLS || self->player.x <= 0 || self->player.y <= 0) {
+        self->player = player;
 
         return 1;
     }
+#endif
 
-    char ch = self->floor.tiles[self->px * MAXCOLS + self->py].c;
+    char ch = self->floor.TILEC(self->player).c;
     if (ch != '.' && ch != '+' && ch != '#' && ch != '<') {
-        self->px = px;
-        self->py = py;
-
-        return 1;
+        self->player = player;
     }
 
-    return 0;
+    return -1;
 }
 
 void GameScreenRender(void *selfv) {
@@ -78,7 +84,7 @@ void GameScreenRender(void *selfv) {
             }
         }
 
-    mvaddch(self->px, self->py, '@' | COLOR_PAIR(4));
+    mvaddch(self->player.x, self->player.y, '@' | COLOR_PAIR(4));
     mvaddch(x - 1, 0, ':');
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../menu.h"
+#include "widgets/menu.h"
 
 typedef struct {
     Menu menu;

@@ -1,6 +1,7 @@
 #include "main_screen.h"
 
 #include <stdlib.h>
+#include <ncurses.h>
 
 void MainScreenInit(MainScreen *self) {
     self->menu.entries = malloc(3 * sizeof(char *));
@@ -17,7 +18,20 @@ int MainScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
 
-    return MenuHandleInput(&(self->menu), input);
+    // fprintf(stderr, "%d %d\n", input, KEY_ENTER);
+    if (input == '\n') {
+        switch (self->menu.selected)
+        {
+        case 0: return 2;
+        case 1: return 1;
+        default:
+            break;
+        }
+    }
+
+    MenuHandleInput(&(self->menu), input);
+
+    return -1;
 }
 
 void MainScreenRender(void *selfv) {

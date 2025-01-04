@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ncurses.h>
-
 // A simple multi-selection menu
 typedef struct {
     char **entries;
