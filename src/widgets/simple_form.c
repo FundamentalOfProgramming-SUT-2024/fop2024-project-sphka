@@ -18,7 +18,9 @@ static void RenderBackButton(int x, int y, bool focused) {
     }
 }
 
-void SimpleFormRender(SimpleForm *form, int x, int y) {
+void SimpleFormRender(SimpleForm *form) {
+    int x = form->x;
+    int y = form->y;
 
     if (form->render_back_button) {
         RenderBackButton(x, y, form->focus == -1);
@@ -27,7 +29,9 @@ void SimpleFormRender(SimpleForm *form, int x, int y) {
     for (int i = 0; i < form->n_fields; i++) {
         bool focused = i == form->focus;
         if (form->fields[i].type == FIELD_TYPE_TEXTBOX) {
-            TextboxRender(&form->fields[i].textbox, x, y, focused);
+            form->fields[i].textbox.x = x;
+            form->fields[i].textbox.y = y;
+            TextboxRender(&form->fields[i].textbox, focused);
         } else if (form->fields[i].type == FIELD_TYPE_BUTTON) {
             int buttonlen = strlen(form->fields[i].button.name) + 4;
             int delta_y = (54 - buttonlen) / 2;
@@ -82,11 +86,16 @@ int SimpleFormHandleInput(SimpleForm *form, int input) {
     return -1;
 }
 
-void SimpleFormSetCursor(SimpleForm *form, int x, int y) {
+void SimpleFormSetCursor(SimpleForm *form) {
+    // int x = form->x;
+    // int y = form->y;
+
     SimpleFormField *focused_field = &form->fields[form->focus];
 
     if (focused_field->type == FIELD_TYPE_TEXTBOX) {
-        TextboxMove(&focused_field->textbox, x + form->focus * STRIDE, y);
+        // focused_field->textbox.x = x + form->focus * STRIDE;
+        // focused_field->textbox.y = y;
+        TextboxMove(&focused_field->textbox);
     } else {
         curs_set(0);
     }

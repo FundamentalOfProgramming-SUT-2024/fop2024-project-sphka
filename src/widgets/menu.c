@@ -14,7 +14,10 @@ int MenuHandleInput(Menu *menu, int input) {
     return false;
 }
 
-void MenuRender(Menu *menu, int x, int y) {
+void MenuRender(Menu *menu) {
+    int x = menu->x;
+    int y = menu->y;
+
     for (int i = 0; i < menu->n_entries; i++) {
         if (i == menu->selected) {
             move(x + i, y);

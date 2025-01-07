@@ -24,27 +24,10 @@ int GameScreenHandleInput(void *selfv, int input) {
     self->player.x += delta.x;
     self->player.y += delta.y;
 
-    // if (input == KEY_UP || input == 'w')
-    //     self->player.x--;
-    // else if (input == KEY_DOWN || input == 's')
-    //     self->player.x++;
-    // else if (input == KEY_RIGHT || input == 'd')
-    //     self->player.y++;
-    // else if (input == KEY_LEFT || input == 'a')
-    //     self->player.y--;
-
     if (input == 'r') {
         GenerateFloor(&self->floor);
         self->player = GetRandomCoord(&self->floor);
     }
-
-#if 0
-    if (self->player.x >= MAXLINES || self->player.y >= MAXCOLS || self->player.x <= 0 || self->player.y <= 0) {
-        self->player = player;
-
-        return 1;
-    }
-#endif
 
     char ch = self->floor.TILEC(self->player).c;
     if (ch != '.' && ch != '+' && ch != '#' && ch != '<') {

@@ -1,15 +1,12 @@
 #pragma once
 
-#include "widgets/textbox.h"
+#include "widgets/simple_form.h"
 
 typedef struct {
     char username[50];
-    Textbox username_tb;
-
     char password[50];
-    Textbox password_tb;
 
-    int focused_field;
+    SimpleForm form;
 } LoginScreen;
 
 void LoginScreenInit(LoginScreen *self);

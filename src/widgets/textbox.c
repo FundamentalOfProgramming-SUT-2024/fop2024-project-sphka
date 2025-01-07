@@ -52,7 +52,9 @@ void RenderRectangle(int y1, int x1, int y2, int x2)
     mvaddch(y2, x2, ACS_LRCORNER);
 }
 
-void TextboxRender(Textbox *textbox, int x, int y, bool is_focused) {
+void TextboxRender(Textbox *textbox, bool is_focused) {
+    int x = textbox->x;
+    int y = textbox->y;
     // char backup = textbox->buffer[textbox->capacity];
     // textbox->buffer[textbox->capacity] = 0;
 
@@ -97,7 +99,7 @@ void TextboxRender(Textbox *textbox, int x, int y, bool is_focused) {
     // textbox->buffer[textbox->capacity] = backup;
 }
 
-void TextboxMove(Textbox *textbox, int x, int y) {
+void TextboxMove(Textbox *textbox) {
     curs_set(1);
-    move(x + 1, y + 2 + textbox->cursor);
+    move(textbox->x + 1, textbox->y + 2 + textbox->cursor);
 }

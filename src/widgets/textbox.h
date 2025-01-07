@@ -3,6 +3,8 @@
 #include <stdbool.h>
 
 typedef struct {
+    int x, y;
+
     char *buffer;
     char *title;
     int capacity;
@@ -11,5 +13,5 @@ typedef struct {
 } Textbox;
 
 int TextboxHandleInput(Textbox *textbox, int input);
-void TextboxRender(Textbox *textbox, int x, int y, bool is_focused);
-void TextboxMove(Textbox *textbox, int x, int y);
+void TextboxRender(Textbox *textbox, bool is_focused);
+void TextboxMove(Textbox *textbox);

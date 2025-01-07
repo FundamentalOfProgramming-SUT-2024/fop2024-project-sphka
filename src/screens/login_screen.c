@@ -6,21 +6,29 @@
 #include <ncurses.h>
 
 void LoginScreenInit(LoginScreen *self) {
-    self->focused_field = 1;
+    self->form.n_fields = 3;
+    self->form.focus = 0;
+    self->form.render_back_button = true;
 
     self->username[0] = 0;
-    self->username_tb.buffer = self->username;
-    self->username_tb.title = "Username";
-    self->username_tb.capacity = sizeof(self->username);
-    self->username_tb.cursor = 0;
-    self->username_tb.is_password = false;
+    self->form.fields[0].type = FIELD_TYPE_TEXTBOX;
+    self->form.fields[0].textbox.buffer = self->username;
+    self->form.fields[0].textbox.capacity = sizeof(self->username);
+    self->form.fields[0].textbox.cursor = 0;
+    self->form.fields[0].textbox.is_password = false;
+    self->form.fields[0].textbox.title = "Username";
 
     self->password[0] = 0;
-    self->password_tb.buffer = self->password;
-    self->password_tb.title = "Password";
-    self->password_tb.capacity = sizeof(self->password);
-    self->password_tb.cursor = 0;
-    self->password_tb.is_password = true;
+    self->form.fields[1].type = FIELD_TYPE_TEXTBOX;
+    self->form.fields[1].textbox.buffer = self->password;
+    self->form.fields[1].textbox.capacity = sizeof(self->password);
+    self->form.fields[1].textbox.cursor = 0;
+    self->form.fields[1].textbox.is_password = true;
+    self->form.fields[1].textbox.title = "Password";
+
+    self->form.fields[2].type = FIELD_TYPE_BUTTON;
+    self->form.fields[2].button.x_offset = 2;
+    strcpy(self->form.fields[2].button.name, "  Login  ");
 }
 
 int LoginScreenHandleInput(void *selfv, int input) {
@@ -29,69 +37,25 @@ int LoginScreenHandleInput(void *selfv, int input) {
     
     LoginScreen *self = (LoginScreen *)selfv;
 
-    if (self->focused_field == 1)
-        TextboxHandleInput(&self->username_tb, input);
-    else if (self->focused_field == 2)
-        TextboxHandleInput(&self->password_tb, input);
-
     if (input == '\t')
-        self->password_tb.is_password = !self->password_tb.is_password;
+        self->form.fields[2].textbox.is_password = !self->form.fields[2].textbox.is_password;
 
-    if ((input == '\n' || input == KEY_LEFT) && self->focused_field == 0)
+    int out = SimpleFormHandleInput(&self->form, input);
+
+    if (out == MAGIC_BACK) {
         return 0;
-
-    if ((input == KEY_DOWN || input == '\n') && self->focused_field < 4 - 1) {
-        self->focused_field++;
-        return -1;
-    } else if (input == KEY_UP && self->focused_field > 0) {
-        self->focused_field--;
-        return -1;
     }
 
     return -1;
 }
 
-static void RenderBackButton(LoginScreen *self, int x, int y) {
-    if (self->focused_field == 0) {
-        // attron(A_REVERSE);
-        attron(COLOR_PAIR(3) | A_UNDERLINE);
-    }
-    mvprintw(x / 2 - 5, y / 2 - 24, "< Back");
-    if (self->focused_field == 0) {
-        // attroff(A_REVERSE);
-        attroff(COLOR_PAIR(3) | A_UNDERLINE);
-    }
-}
-
-void RenderPassVisibilityHint(int x, int y) {
-    mvprintw(x / 2 + 3, y / 2 - 19, "(Press ");
+// TODO: Merge with the on at signup_screen
+static void RenderPassVisibilityHint(int x, int y) {
+    mvprintw(x / 2 + 2, y / 2 - 19, "(Press ");
     attron(A_ITALIC | A_BOLD);
     printw("tab");
     attroff(A_ITALIC | A_BOLD);
     printw(" to toggle password visibility)");
-}
-
-void RenderLoginButton(LoginScreen *self, int x, int y) {
-    if (self->focused_field == 3) {
-        attron(A_REVERSE);
-        mvprintw(x / 2 + 5, y / 2 - 4, "  Login  ");
-        attroff(A_REVERSE);
-        mvaddch(x / 2 + 5, y / 2 - 6, '>' | COLOR_PAIR(3));
-        mvaddch(x / 2 + 5, y / 2 + 6, '<' | COLOR_PAIR(3));
-    } else {
-        mvprintw(x / 2 + 5, y / 2 - 4, "  Login  ");
-        mvaddch(x / 2 + 5, y / 2 - 6, ' ');
-        mvaddch(x / 2 + 5, y / 2 + 6, ' ');
-    }
-}
-
-void SetCursor(LoginScreen *self, int x, int y) {
-    if (self->focused_field == 1)
-        TextboxMove(&self->username_tb, x / 2 - 3, y / 2 - 26);
-    else if (self->focused_field == 2)
-        TextboxMove(&self->password_tb, x / 2, y / 2 - 26);
-    else
-        curs_set(0);
 }
 
 void LoginScreenRender(void *selfv) {
@@ -99,23 +63,20 @@ void LoginScreenRender(void *selfv) {
 
     int x, y;
     getmaxyx(stdscr, x, y);
-    mvprintw(x / 2 - 5, y / 2 - 7, "   - ");
+    mvprintw(x / 2 - 6, y / 2 - 7, "   - ");
     attron(A_ITALIC | A_BOLD);
     printw("Login");
     attroff(A_ITALIC | A_BOLD);
     printw(" -   ");
 
-    RenderBackButton(self, x, y);
+    self->form.x = x / 2 - 4;
+    self->form.y = y / 2 - 26;
 
-    TextboxRender(&self->username_tb, x / 2 - 3, y / 2 - 26, self->focused_field == 1);
-    TextboxRender(&self->password_tb, x / 2, y / 2 - 26, self->focused_field == 2);
-
+    SimpleFormRender(&self->form);
     RenderPassVisibilityHint(x, y);
-    RenderLoginButton(self, x, y);
-
-    SetCursor(self, x, y);
+    SimpleFormSetCursor(&self->form);
 }
 
 void LoginScreenFree(void *selfv) {
-    LoginScreen *self = (LoginScreen *)selfv;
+    // LoginScreen *self = (LoginScreen *)selfv;
 }

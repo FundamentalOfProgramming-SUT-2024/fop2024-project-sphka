@@ -4,9 +4,6 @@
 
 typedef struct {
     Coord player;
-
-    // char **map;
-    // int mx, my;
     Floor floor;
 } GameScreen;
 

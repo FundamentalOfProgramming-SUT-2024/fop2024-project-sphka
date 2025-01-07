@@ -76,11 +76,14 @@ void SignupScreenRender(void *selfv) {
     attroff(A_ITALIC | A_BOLD);
     printw(" -   ");
 
-    SimpleFormRender(&self->form, x / 2 - 4, y / 2 - 26);
+    self->form.x = x / 2 - 4;
+    self->form.y = y / 2 - 26;
+
+    SimpleFormRender(&self->form);
     RenderPassVisibilityHint(x, y);
-    SimpleFormSetCursor(&self->form, x / 2 - 4, y / 2 - 26);
+    SimpleFormSetCursor(&self->form);
 }
 
 void SignupScreenFree(void *selfv) {
-    SignupScreen *self = (SignupScreen *)selfv;
+    // SignupScreen *self = (SignupScreen *)selfv;
 }

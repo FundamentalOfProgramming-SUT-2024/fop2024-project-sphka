@@ -1,3 +1,5 @@
+#pragma once
+
 #include "textbox.h"
 
 #define MAGIC_BACK (-88)
@@ -20,8 +22,9 @@ typedef struct
     };
 } SimpleFormField;
 
-
 typedef struct {
+    int x, y;
+
     SimpleFormField fields[7];
     int n_fields;
     int focus;
@@ -29,6 +32,6 @@ typedef struct {
     bool render_back_button;
 } SimpleForm;
 
-void SimpleFormRender(SimpleForm *form, int x, int y);
+void SimpleFormRender(SimpleForm *form);
 int SimpleFormHandleInput(SimpleForm *form, int input);
-void SimpleFormSetCursor(SimpleForm *form, int x, int y);
+void SimpleFormSetCursor(SimpleForm *form);

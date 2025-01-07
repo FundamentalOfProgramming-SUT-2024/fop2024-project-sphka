@@ -18,7 +18,6 @@ int MainScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
 
-    // fprintf(stderr, "%d %d\n", input, KEY_ENTER);
     if (input == '\n') {
         switch (self->menu.selected)
         {
@@ -40,7 +39,11 @@ void MainScreenRender(void *selfv) {
     int x, y;
     getmaxyx(stdscr, x, y);
     mvprintw(x / 2 - 2, y / 2 - 8, "Welcome to ROGUE!");
-    MenuRender(&(self->menu), x / 2, y / 2 - 10);
+
+    self->menu.x = x / 2;
+    self->menu.y = y / 2 - 10;
+
+    MenuRender(&self->menu);
 }
 
 void MainScreenFree(void *selfv) {
