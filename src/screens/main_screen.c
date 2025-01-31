@@ -4,11 +4,12 @@
 #include <ncurses.h>
 
 void MainScreenInit(MainScreen *self) {
-    self->menu.entries = malloc(3 * sizeof(char *));
-    self->menu.entries[0] = "Create New User";
+    self->menu.n_entries = 4;
+    self->menu.entries = malloc(self->menu.n_entries * sizeof(char *));
+    self->menu.entries[0] = "  Create user  ";
     self->menu.entries[1] = "     Login     ";
-    self->menu.entries[2] = "  Leaderboard  ";
-    self->menu.n_entries = 3;
+    self->menu.entries[2] = "  Guest login  ";
+    self->menu.entries[3] = "  Leaderboard  ";
     self->menu.selected = 0;
 }
 

@@ -6,15 +6,18 @@
 #include <string.h>
 #include <ctype.h>
 
-User *LoadUsers(char *filename, int *n_users);
-int WriteUsers(char *filename, User *users, int n_users);
+UserManager usermanager;
+User *logged_in_user = NULL;
+
+User **LoadUsers(char *filename, int *n_users);
+int WriteUsers(char *filename, User **users, int n_users);
 
 // TODO: is this valid?
 int IsEmailValid(char *email) {
     //         abc@xyz.com
     // region: 000 111 222
 
-    // TODO: .
+    // TODO:
     for (int region = 0; *email; email++) {
         // printf("'%c', %d\n", *email, region);
         if (!isalnum(*email) && !(*email == '_')) {
@@ -57,13 +60,13 @@ int UserManagerRegister(UserManager *userman, char *username, char *email, char 
     assert(IsEmailValid(email));
 
     for (int i = 0; i < userman->n_users; i++) {
-        if (strcmp(userman->users[i].username, username) == 0)
+        if (strcmp(userman->users[i]->username, username) == 0)
             return -1;
     }
 
-
-    userman->users = realloc(userman->users, (userman->n_users + 1) * sizeof(User));
-    User *user = &userman->users[userman->n_users++];
+    userman->users = realloc(userman->users, (userman->n_users + 1) * sizeof(User *));
+    User *user = malloc(sizeof(User));
+    userman->users[userman->n_users++] = user;
     strncpy(user->username, username, 50);
     strncpy(user->email, email, 50);
     strncpy(user->password, password, 50);
@@ -73,7 +76,22 @@ int UserManagerRegister(UserManager *userman, char *username, char *email, char 
     return 0;
 }
 
-User *LoadUsers(char *filename, int *n_users) {
+User *UserManagerLogin(UserManager *userman, char *username, char *password) {
+    User *out = NULL;
+
+    // Do a full iteration to avoid timing attacks
+    for (int i = 0; i < userman->n_users; i++) {
+        User *user = userman->users[i];
+        int usercmp = strcmp(user->username, username);
+        int passcmp = strcmp(user->password, password);
+        if (usercmp == 0 && passcmp == 0)
+            out = user;
+    }
+
+    return out;
+}
+
+User **LoadUsers(char *filename, int *n_users) {
     int user = 0;
     int field = 0;
     int offset = 0;
@@ -83,7 +101,8 @@ User *LoadUsers(char *filename, int *n_users) {
     if (file == NULL)
         return NULL;
 
-    User *users = malloc(1 * sizeof(User));
+    User **users = malloc(1 * sizeof(User *));
+    users[user] = malloc(sizeof(User));
 
     char buffer[51];
     int read_count = 0;
@@ -92,14 +111,15 @@ User *LoadUsers(char *filename, int *n_users) {
         for (int i = 0; i < read_count; i++) {
             char *target;
             if (field == 0)
-                target = users[user].username;
+                target = users[user]->username;
             else if (field == 1)
-                target = users[user].email;
+                target = users[user]->email;
             else if (field == 2)
-                target = users[user].password;
+                target = users[user]->password;
 
             if (buffer[i] == '\t') {
                 if (field == 2) {
+                    // TODO: Handle memory leaks
                     free(users);
                     return NULL;
                 }
@@ -112,8 +132,9 @@ User *LoadUsers(char *filename, int *n_users) {
                     return NULL;
                 }
                 target[offset] = 0;
-                fprintf(stdout, "User { u='%s', e='%s', p='%s' }\n", users[user].username, users[user].email, users[user].password);
+                fprintf(stdout, "User { u='%s', e='%s', p='%s' }\n", users[user]->username, users[user]->email, users[user]->password);
                 user++;
+                users[user] = malloc(sizeof(User));
                 users = realloc(users, (user + 1) * sizeof(User));
                 field = 0;
                 offset = 0;
@@ -127,10 +148,11 @@ User *LoadUsers(char *filename, int *n_users) {
 
     if (field) {
         if (field != 2) {
+            // TODO: ...
             free(users);
             return NULL;
         }
-        users[user++].password[offset] = 0;
+        users[user++]->password[offset] = 0;
     }
 
     // char *target;
@@ -149,14 +171,17 @@ User *LoadUsers(char *filename, int *n_users) {
     return users;
 }
 
-int WriteUsers(char *filename, User *users, int n_users) {
+int WriteUsers(char *filename, User **users, int n_users) {
     FILE *file = fopen(filename, "w");
     if (file == NULL)
         return -1;
 
     for (int i = 0; i < n_users; i++) {
-        fprintf(file, "%s\t%s\t%s\n", users[i].username, users[i].email, users[i].password);
+        fprintf(file, "%s\t%s\t%s\n", users[i]->username, users[i]->email, users[i]->password);
     }
+
+    fflush(file);
+    fclose(file);
 
     return 0;
 }

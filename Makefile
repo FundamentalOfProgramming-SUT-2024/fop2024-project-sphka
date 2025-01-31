@@ -4,7 +4,7 @@ SOURCES := $(call rwildcard,src,*.c)
 HEADERS := $(call rwildcard,src,*.h)
 
 rogue: $(SOURCES) $(HEADERS)
-	clang $(SOURCES) -o rogue -lncurses -g -Wall -I src
+	clang $(SOURCES) -o rogue -lncursesw -g -Wall -I src
 
 check: $(SOURCES) $(HEADERS)
 	clang-tidy $(SOURCES) -checks=-*,clang-analyzer-*,-clang-analyzer-cplusplus*

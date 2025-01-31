@@ -1,10 +1,10 @@
 #pragma once
 
 #include "map.h"
+#include "../base.h"
+#include "../data/game.h"
 
 typedef struct {
-    Coord player;
-    Floor floor;
 } GameScreen;
 
 void GameScreenInit(GameScreen *self);

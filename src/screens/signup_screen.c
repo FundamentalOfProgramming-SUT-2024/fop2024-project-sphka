@@ -1,4 +1,5 @@
 #include "signup_screen.h"
+#include "data/users.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -6,6 +7,9 @@
 #include <ncurses.h>
 
 void SignupScreenInit(SignupScreen *self) {
+    self->message.type = MessageType_None;
+    self->message.message[0] = '\0';
+    
     self->form.n_fields = 4;
     self->form.focus = 0;
     self->form.render_back_button = true;
@@ -39,11 +43,65 @@ void SignupScreenInit(SignupScreen *self) {
     strcpy(self->form.fields[3].button.name, "  Create  ");
 }
 
+static bool CheckPassword(SignupScreen *self) {
+    if (strlen(self->password) < 7) {
+        self->message.type = MessageType_Error;
+        strcpy(self->message.message, "The password is shorter than 7 characters!");
+        return false;
+    }
+
+    bool has_upper = false;
+    bool has_lower = false;
+    bool has_digit = false;
+
+    for (char *c = self->password; *c; c++) {
+        has_upper |= 'A' <= *c && *c <= 'Z';
+        has_lower |= 'a' <= *c && *c <= 'z';
+        has_digit |= '0' <= *c && *c <= '9';
+    }
+
+    if (!has_upper || !has_lower || !has_digit) {
+        self->message.type = MessageType_Error;
+        strcpy(self->message.message, "The password does not contain any");
+
+        if (!has_upper) {
+            strcat(self->message.message, " uppercase letters");
+        }
+
+        if (!has_lower) {
+            if (!has_upper && has_digit)
+                strcat(self->message.message, " and");
+            else if (!has_upper)
+                strcat(self->message.message, ",");
+
+            strcat(self->message.message, " lowercase letters");
+        }
+
+        if (!has_digit) {
+            if (!has_upper || !has_lower)
+                strcat(self->message.message, " and");
+
+            strcat(self->message.message, " digits");
+        }
+
+        strcat(self->message.message, "!");
+        return false;
+    }
+
+    return true;
+}
+
 int SignupScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
 
+    if (input == KEY_F(1)) {
+        curs_set(0);
+        return 0;
+    }
+
     SignupScreen *self = (SignupScreen *)selfv;
+    self->message.type = MessageType_None;
 
     if (input == '\t')
         self->form.fields[2].textbox.is_password = !self->form.fields[2].textbox.is_password;
@@ -54,11 +112,32 @@ int SignupScreenHandleInput(void *selfv, int input) {
         return 0;
     }
 
+    if (out > 0) {
+        // ُTODO: Check email
+        if (CheckPassword(self)) {
+            int reg = UserManagerRegister(&usermanager, self->username, self->email, self->password);
+            if (reg != 0) {
+                self->message.type = MessageType_Error;
+                strcpy(self->message.message, "This username already exists!");
+            } else {
+                int flush = UserManagerFlush(&usermanager);
+                if (flush != 0) {
+                    self->message.type = MessageType_Error;
+                    strcpy(self->message.message, "Unable to write data to the disk!");
+                } else {
+                    self->message.type = MessageType_Info;
+                    strcpy(self->message.message, "User created successfully!");
+                }
+                // fprintf(stderr, "registering %d %d\n", reg, flush);
+            }
+        }
+    }
+
     return -1;
 }
 
 static void RenderPassVisibilityHint(int x, int y) {
-    mvprintw(x / 2 + 5, y / 2 - 19, "(Press ");
+    mvprintw(x / 2 + 5, y / 2 - 20, "(Press ");
     attron(A_ITALIC | A_BOLD);
     printw("tab");
     attroff(A_ITALIC | A_BOLD);
@@ -81,6 +160,8 @@ void SignupScreenRender(void *selfv) {
 
     SimpleFormRender(&self->form);
     RenderPassVisibilityHint(x, y);
+    MessageLineRender(&self->message, x / 2 + 9, y);
+
     SimpleFormSetCursor(&self->form);
 }
 

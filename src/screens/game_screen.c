@@ -1,15 +1,13 @@
 #include "game_screen.h"
 
 #include <stdlib.h>
-#include <string.h>
-
 #include <ncurses.h>
 
 #include "input.h"
+#include "../dialogs/weapon_selector.h"
 
 void GameScreenInit(GameScreen *self) {
-    GenerateFloor(&self->floor);
-    self->player = GetRandomCoord(&self->floor);
+    NewGame();
 }
 
 int GameScreenHandleInput(void *selfv, int input) {
@@ -18,20 +16,57 @@ int GameScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
 
-    Coord player = self->player;
+    Coord next_player_coord = game.player.coord;
     Coord delta = InputDirection(input);
 
-    self->player.x += delta.x;
-    self->player.y += delta.y;
+    next_player_coord.x += delta.x;
+    next_player_coord.y += delta.y;
 
-    if (input == 'r') {
-        GenerateFloor(&self->floor);
-        self->player = GetRandomCoord(&self->floor);
+    // if (input == 'r') {
+    //     GenerateFloor(self->floor);
+    //     self->player = GetRandomCoord(self->floor);
+    // }
+
+    if (CURRENT_FLOOR.TILEC(game.player.coord).c == '<' && input == '<' && game.floor_id < FLOOR_COUNT - 1) {
+        game.floor_id++;
     }
 
-    char ch = self->floor.TILEC(self->player).c;
-    if (ch != '.' && ch != '+' && ch != '#' && ch != '<') {
-        self->player = player;
+    if (CURRENT_FLOOR.TILEC(game.player.coord).c == '>' && input == '>' && game.floor_id) {
+        game.floor_id--;
+    }
+
+    if (input == 'i')
+        WeaponSelector();
+
+    if (IsTilePassable(next_player_coord)) {
+        game.player.coord = next_player_coord;
+    }
+
+    Discover(&CURRENT_FLOOR, game.player.coord);
+
+    // Pickup item
+    if (CURRENT_FLOOR.TILEC(game.player.coord).has_item) {
+        Item *to_pickup = &CURRENT_FLOOR.TILEC(game.player.coord).item;
+        CURRENT_FLOOR.TILEC(game.player.coord).has_item = !Pickup(to_pickup);
+    }
+
+    for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+        Enemy *enemy = &CURRENT_FLOOR.enemies[i];
+
+        if (enemy->health)
+            EnemyUpdate(enemy);
+    }
+
+    if (input == ' ') {
+        // Attack
+        for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+            Enemy *enemy = &CURRENT_FLOOR.enemies[i];
+            if (enemy->health && SqDistance(enemy->coord, game.player.coord) <= 2) {
+                enemy->health -= 2;
+                if (enemy->health < 0)
+                    enemy->health = 0;
+            }
+        }
     }
 
     return -1;
@@ -43,32 +78,36 @@ void GameScreenRender(void *selfv) {
     int x, y;
     getmaxyx(stdscr, x, y);
 
+    for (int i = 0; i < y; i++)
+        mvaddch(0, i, ' ');
+
+    mvprintw(0, 0, "%s", g_message_bar);
+
     for (int _i = 1; _i < x - 1; _i++)
         for (int j = 0; j < y; j++) {
-            int i = _i - 1;
+            int i = _i;
 
             if (i < MAXLINES && j < MAXCOLS) {
-                char ch = self->floor.TILE(i, j).c;
-                int flags = 0;
-
-                switch (ch)
-                {
-                case '#': flags = COLOR_PAIR(1); break;
-                case '+': case '-': case '|':
-                    flags = COLOR_PAIR(2); break;
-                case '<': flags = COLOR_PAIR(4) | A_REVERSE; break;
-                case 'O': flags = COLOR_PAIR(3); break;
-                case '=': flags = COLOR_PAIR(3); break;
-                default:
-                    break;
-                }
-
-                mvaddch(i, j, ch | flags);
+                Tile *tile = &CURRENT_FLOOR.TILE(i, j);
+                mvaddch(i, j, GetTileSprite(tile));
             }
         }
 
-    mvaddch(self->player.x, self->player.y, '@' | COLOR_PAIR(4));
-    mvaddch(x - 1, 0, ':');
+    for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+        Enemy *enemy = &CURRENT_FLOOR.enemies[i];
+
+        if (enemy->health)
+            mvaddch(enemy->coord.x, enemy->coord.y, enemy->type->sprite);
+    }
+
+    mvaddch(game.player.coord.x, game.player.coord.y, '@' | COLOR_PAIR(4));
+
+
+    attron(COLOR_PAIR(5));
+    mvprintw(x - 1, 0, "Gold: ");
+    // attron(A_ITALIC);
+    printw("%d$     ", game.player.gold);
+    attroff(COLOR_PAIR(5) /*| A_ITALIC*/);
 }
 
 void GameScreenFree(void *self) {

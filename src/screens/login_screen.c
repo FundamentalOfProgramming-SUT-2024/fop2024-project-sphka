@@ -1,4 +1,5 @@
 #include "login_screen.h"
+#include "data/users.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -34,7 +35,12 @@ void LoginScreenInit(LoginScreen *self) {
 int LoginScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
-    
+
+    if (input == KEY_F(1)) {
+        curs_set(0);
+        return 0;
+    }
+
     LoginScreen *self = (LoginScreen *)selfv;
 
     if (input == '\t')
@@ -46,12 +52,23 @@ int LoginScreenHandleInput(void *selfv, int input) {
         return 0;
     }
 
+    if (out > 0) {
+        User *user = UserManagerLogin(&usermanager, self->username, self->password);
+        if (user == NULL) {
+            self->message.type = MessageType_Error;
+            strcpy(self->message.message, "Wrong username and/or password!");
+        } else {
+            logged_in_user = user;
+            return 3;
+        }
+    }
+
     return -1;
 }
 
 // TODO: Merge with the on at signup_screen
 static void RenderPassVisibilityHint(int x, int y) {
-    mvprintw(x / 2 + 2, y / 2 - 19, "(Press ");
+    mvprintw(x / 2 + 2, y / 2 - 20, "(Press ");
     attron(A_ITALIC | A_BOLD);
     printw("tab");
     attroff(A_ITALIC | A_BOLD);
@@ -74,6 +91,8 @@ void LoginScreenRender(void *selfv) {
 
     SimpleFormRender(&self->form);
     RenderPassVisibilityHint(x, y);
+    MessageLineRender(&self->message, x / 2 + 6, y);
+
     SimpleFormSetCursor(&self->form);
 }
 

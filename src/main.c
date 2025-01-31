@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <time.h>
+#include <locale.h>
 #include <ncurses.h>
 
 #include "menu.h"
@@ -7,13 +8,13 @@
 #include "screens/game_screen.h"
 #include "screens/login_screen.h"
 #include "screens/signup_screen.h"
+#include "screens/pregame_screen.h"
 #include "screen.h"
 
 #include "data/users.h"
 
 int main() {
-    UserManager um;
-    if (UserManagerInit(&um) < 0) {
+    if (UserManagerInit(&usermanager) < 0) {
         fprintf(stderr, "Failed to init usermanager.");
         return 1;
     }
@@ -32,6 +33,7 @@ int main() {
 
     // WriteUsers("users2.data", users, n_users);
 
+    setlocale(LC_ALL, "");
     srand(time(NULL));
     initscr();
     keypad(stdscr, TRUE);
@@ -45,6 +47,8 @@ int main() {
     init_pair(2, COLOR_CYAN, COLOR_BLACK);
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
     init_pair(4, COLOR_GREEN, COLOR_BLACK);
+    init_pair(5, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(6, COLOR_MAGENTA, COLOR_BLACK);
     // init_pair(2, 1024, COLOR_BLACK);
 
     MainScreen ms;
@@ -55,6 +59,9 @@ int main() {
 
     SignupScreen ss;
     SignupScreenInit(&ss);
+
+    PregameScreen pgs;
+    PregameScreenInit(&pgs);
 
     GameScreen gs;
     GameScreenInit(&gs);
@@ -80,6 +87,13 @@ int main() {
        .data = &ss
     };
 
+    Screen pregame_screen = {
+       .HandleInput = PregameScreenHandleInput,
+       .Render = PregameScreenRender,
+       .Free = PregameScreenFree,
+       .data = &pgs
+    };
+
     Screen game_screen = {
         .HandleInput = GameScreenHandleInput,
         .Render = GameScreenRender,
@@ -88,7 +102,7 @@ int main() {
     };
 
     Screen *currentScreen = &main_screen;
-    Screen *screens[] = { &main_screen, &login_screen, &signup_screen, &game_screen };
+    Screen *screens[] = { &main_screen, &login_screen, &signup_screen, &pregame_screen, &game_screen };
 
     while (1) {
         ScreenRender(currentScreen);

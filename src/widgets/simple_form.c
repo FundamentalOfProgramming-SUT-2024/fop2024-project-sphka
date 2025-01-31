@@ -34,7 +34,7 @@ void SimpleFormRender(SimpleForm *form) {
             TextboxRender(&form->fields[i].textbox, focused);
         } else if (form->fields[i].type == FIELD_TYPE_BUTTON) {
             int buttonlen = strlen(form->fields[i].button.name) + 4;
-            int delta_y = (54 - buttonlen) / 2;
+            int delta_y = (53 - buttonlen) / 2;
             int delta_x = form->fields[i].button.x_offset;
             x += delta_x;
             y += delta_y;
@@ -65,6 +65,7 @@ int SimpleFormHandleInput(SimpleForm *form, int input) {
         SimpleFormField *focused_field = &form->fields[form->focus];
 
         if (input == '\n' && focused_field->type == FIELD_TYPE_BUTTON) {
+            // fprintf(stderr, "returning %d\n", form->focus);
             return form->focus;
         }
 
