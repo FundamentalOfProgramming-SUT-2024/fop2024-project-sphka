@@ -45,6 +45,7 @@ void MainScreenRender(void *selfv) {
     self->menu.y = y / 2 - 10;
 
     MenuRender(&self->menu);
+    refresh();
 }
 
 void MainScreenFree(void *selfv) {

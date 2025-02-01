@@ -44,3 +44,20 @@ ItemInfo gold_item_info = {
     .sprite = '$' | COLOR_PAIR(5),
     .name = "Gold"
 };
+
+bool AreOfSameType(Item *a, Item *b) {
+    if (a->category != b->category)
+        return false;
+
+    switch (a->category)
+    {
+    case ItemCategory_Gold:
+        return true;
+
+    case ItemCategory_Weapon:
+        return a->ex_weapon.type == b->ex_weapon.type;
+    
+    default:
+        return false;
+    }
+}

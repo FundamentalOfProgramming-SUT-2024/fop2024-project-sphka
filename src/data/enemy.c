@@ -15,8 +15,16 @@ EnemyType enemies[EnemyTypeCount] = {
 };
 
 void EnemyUpdate(Enemy *enemy) {
+    if (enemy->health == 0 || !CanSee(&CURRENT_FLOOR, enemy->coord, game.player.prev_coord))
+        return;
+
     Coord best_coord = enemy->coord;
     int best_dist = SqDistance(best_coord, game.player.coord);
+
+    // Try to attack the player before moving to allow her to dodge
+    if (best_dist <= 2)
+        Damage(enemy);
+
 
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
@@ -24,7 +32,7 @@ void EnemyUpdate(Enemy *enemy) {
                 continue;
 
             Coord coord = (Coord) { enemy->coord.x + x, enemy->coord.y + y };
-            if (!IsTilePassable(coord))
+            if (!IsTilePassable(coord, NULL))
                 continue;
 
             int new_dist = SqDistance(coord, game.player.coord);

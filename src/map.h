@@ -56,7 +56,7 @@ static inline uint32_t GetTileSprite(Tile *tile) {
     }
 }
 
-bool IsTilePassable(Coord coord);
+bool IsTilePassable(Coord coord, Enemy **enemy_out);
 
 typedef struct {
     Coord p0, p1;
@@ -82,6 +82,9 @@ typedef struct {
 } Floor;
 
 void GenerateFloor(Floor *floor, Floor *prev);
+int GetCoordRoom(Floor *floor, Coord coord);
 Coord GetRandomCoordInRoom(Room *room);
 Coord GetRandomCoord(Floor *floor);
 void Discover(Floor *floor, Coord coord);
+
+bool CanSee(Floor *floor, Coord a, Coord b);

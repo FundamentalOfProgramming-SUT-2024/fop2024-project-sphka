@@ -5,6 +5,7 @@
 #include <ncurses.h>
 
 #include "../data/users.h"
+#include "../data/game.h"
 
 void PregameScreenInit(PregameScreen *self) {
     self->menu.n_entries = 4;
@@ -25,7 +26,9 @@ int PregameScreenHandleInput(void *selfv, int input) {
     if (input == '\n') {
         switch (self->menu.selected)
         {
-        case 0: return 4;
+        case 0:
+            NewGame();
+            return 4;
         // case 1: return 1;
         default:
             break;
@@ -48,6 +51,7 @@ void PregameScreenRender(void *selfv) {
     self->menu.y = y / 2 - 10;
 
     MenuRender(&self->menu);
+    refresh();
 }
 
 void PregameScreenFree(void *selfv) {

@@ -106,7 +106,7 @@ int main() {
 
     while (1) {
         ScreenRender(currentScreen);
-        refresh();
+        // refresh();
         int ch = getch();
         int ret = ScreenHandleInput(currentScreen, ch);
         // fprintf(stderr, "%d\n", ret);

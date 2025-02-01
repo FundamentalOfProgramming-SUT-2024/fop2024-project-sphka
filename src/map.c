@@ -14,7 +14,7 @@ void DoCorridors(Floor *floor);
 void ConnectRooms(Floor *floor, int i, int j);
 void DoItems(Floor *floor);
 
-bool IsTilePassable(Coord coord) {
+bool IsTilePassable(Coord coord, Enemy **enemy_out) {
     if (strchr(".+#<>", CURRENT_FLOOR.TILEC(coord).c) == NULL)
         return false;
 
@@ -23,8 +23,11 @@ bool IsTilePassable(Coord coord) {
 
     for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
         Enemy *enemy = &CURRENT_FLOOR.enemies[i];
-        if (enemy->health && enemy->coord.x == coord.x && enemy->coord.y == coord.y)
+        if (enemy->health && enemy->coord.x == coord.x && enemy->coord.y == coord.y) {
+            if (enemy_out)
+                *enemy_out = enemy;
             return false;
+        }
     }
 
     return true;
@@ -46,8 +49,6 @@ Room *PickExistingRoom(Floor *floor) {
 
     return room;
 }
-
-int GetCoordRoom(Floor *floor, Coord coord);
 
 void GenerateFloor(Floor *floor, Floor *prev) {
     for (int x = 0; x < MAXLINES; x++)
@@ -402,4 +403,44 @@ void Discover(Floor *floor, Coord coord) {
         // DiscoverCorridor(floor, coord, 0, 3);
         DiscoverCorridor(floor, coord, 5);
     }
+}
+
+bool CanSeeCross(Coord a, Coord b) {
+    if (a.x != b.x && a.y != b.y)
+        return false;
+
+    if (a.x == b.x && a.y == b.y)
+        return false;
+
+    int x_dist = abs(a.x - b.x);
+    if (0 < x_dist && x_dist <= 5)
+        return true;
+
+    int y_dist = abs(a.y - b.y);
+    if (0 < y_dist && y_dist <= 5)
+        return true;
+
+    return false;
+}
+
+bool CanSee(Floor *floor, Coord a, Coord b) {
+    int a_room = GetCoordRoom(floor, a);
+    int b_room = GetCoordRoom(floor, b);
+
+    // If they are in the same room, they can see each other
+    if (a_room >= 0 && a_room == b_room)
+        return true;
+
+    // If they are in different rooms, they can't see each other
+    // Well, except maybe when two doors are dead ahead each other
+    if (a_room >= 0 && b_room >= 0 && a_room != b_room)
+        return false;
+
+    if (a_room >= 0 && CURRENT_FLOOR.TILEC(a).c != '+')
+        return false;
+
+    if (b_room >= 0 && CURRENT_FLOOR.TILEC(b).c != '+')
+        return false;
+
+    return CanSeeCross(a, b);
 }

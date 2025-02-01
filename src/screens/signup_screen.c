@@ -163,6 +163,7 @@ void SignupScreenRender(void *selfv) {
     MessageLineRender(&self->message, x / 2 + 9, y);
 
     SimpleFormSetCursor(&self->form);
+    refresh();
 }
 
 void SignupScreenFree(void *selfv) {

@@ -94,6 +94,8 @@ void LoginScreenRender(void *selfv) {
     MessageLineRender(&self->message, x / 2 + 6, y);
 
     SimpleFormSetCursor(&self->form);
+
+    refresh();
 }
 
 void LoginScreenFree(void *selfv) {

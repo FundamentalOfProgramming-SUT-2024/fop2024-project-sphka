@@ -2,10 +2,14 @@
 
 #include <stdlib.h>
 
+#include "input.h"
+#include "dialogs/weapon_selector.h"
+
 Game game;
 
 void InitPlayer(Player *player, Coord coord) {
     player->coord = coord;
+    player->prev_coord = coord;
 
     // Give the player a starting weapon
     game.player.n_weapons = 1;
@@ -14,6 +18,7 @@ void InitPlayer(Player *player, Coord coord) {
     game.player.weapons[0].info = &w_type->item_info;
     game.player.weapons[0].ex_weapon.type = w_type;
     game.player.weapons[0].count = w_type->collect_count;
+    game.player.equipment = 0;
 
     game.player.gold = 0;
 
@@ -23,12 +28,32 @@ void InitPlayer(Player *player, Coord coord) {
 
 void NewGame() {
     game.floor_id = 0;
+    game.over = false;
+    game.killer = NULL;
 
     for (int i = 0; i < FLOOR_COUNT; i++)
         GenerateFloor(&game.floors[i], i ? &game.floors[i - 1] : NULL);
 
     InitPlayer(&game.player, GetRandomCoord(&CURRENT_FLOOR));
     Discover(&CURRENT_FLOOR, game.player.coord);
+}
+
+bool Move(int input) {
+    Coord next_player_coord = game.player.coord;
+    Coord delta = InputDirection(input);
+
+    if (delta.x == 0 && delta.y == 0)
+        return false;
+
+    game.player.prev_coord = game.player.coord;
+
+    next_player_coord.x += delta.x;
+    next_player_coord.y += delta.y;
+
+    if (IsTilePassable(next_player_coord, NULL))
+        game.player.coord = next_player_coord;
+
+    return true;
 }
 
 bool Pickup(Item *item) {
@@ -69,4 +94,168 @@ bool Pickup(Item *item) {
     return false;
 }
 
+bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
+    sprintf(g_message_bar, "Attacking with %s. Press a direction key.", CURRENT_WEAPON.info->name);
+    UpdateMessageBar(true);
+
+    Coord delta = InputDirection(getch());
+
+    if (delta.x == 0 && delta.y == 0) {
+        sprintf(g_message_bar, "Invalid key pressed.");
+        return true;
+    }
+
+    Coord r = game.player.coord;
+    int i = 0;
+    bool must_drop = false;
+    while (true) {
+        Coord next_r = r;
+        next_r.x += delta.x;
+        next_r.y += delta.y;
+
+        Enemy *enemy = NULL;
+        if (!IsTilePassable(next_r, &enemy)) {
+            // We either hit an enemy, or a wall or sth
+            if (enemy) {
+                enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage;
+                CURRENT_WEAPON.count--;
+                (*attackees)++;
+                *attackee = enemy;
+                if (enemy->health <= 0) {
+                    (*dead_enemies)++;
+                    enemy->health = 0;
+                }
+            } else if (i != 0) {
+                must_drop = true;
+            }
+
+            break;
+        } else if (i >= CURRENT_WEAPON.ex_weapon.type->range) {
+            must_drop = true;
+            break;
+        } else {
+            // Move on
+            r = next_r;
+            i++;
+        }
+    }
+
+    if (must_drop) {
+        // We hit an obstacle which has some distance from the player
+        CURRENT_WEAPON.count--;
+
+        // TODO: Should we override what ever there was?
+        Tile *tile = &CURRENT_FLOOR.TILEC(r);
+
+        if (!tile->has_item) {
+            tile->has_item = true;
+            tile->item = CURRENT_WEAPON;
+            tile->item.count = 1;
+        } else if (AreOfSameType(&tile->item, &CURRENT_WEAPON)) {
+            tile->item.count++;
+        }
+    }
+
+    return false;
+}
+
+void MeleeAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
+    for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+        Enemy *enemy = &CURRENT_FLOOR.enemies[i];
+        if (enemy->health && SqDistance(enemy->coord, game.player.coord) <= 2) {
+            enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage;
+            (*attackees)++;
+            *attackee = enemy;
+            if (enemy->health <= 0) {
+                (*dead_enemies)++;
+                enemy->health = 0;
+            }
+        }
+    }
+}
+
+void Attack() {
+    Enemy *attackee = NULL;
+    int attackees = 0;
+    int dead_enemies = 0;
+
+    if (CURRENT_WEAPON.ex_weapon.type->range) {
+        if (RangedAttack(&attackee, &attackees, &dead_enemies))
+            return;
+    }
+    else
+        MeleeAttack(&attackee, &attackees, &dead_enemies);
+
+    if (attackees == 0)
+        strcpy(g_message_bar, "You miss!");
+    else if (attackees > 1) {
+        if (dead_enemies == 0)
+            sprintf(g_message_bar, "You hit %d enemies!", attackees);
+        else {
+            if (dead_enemies == attackees)
+                sprintf(g_message_bar, "You hit and kill %d enemies!", attackees);
+            else
+                sprintf(g_message_bar, "You hit %d enemies, killing %d of them!", attackees, dead_enemies);
+        }
+    }
+    else
+        sprintf(g_message_bar, "You hit%s the %s!", attackee->health ? "" : " and kill", attackee->type->name);
+}
+
+void UpdatePlayer(int input) {
+    bool bro_moved = Move(input);
+    Tile *tile = &CURRENT_FLOOR.TILEC(game.player.coord);
+
+    if (bro_moved)
+        // Pickup item
+        tile->has_item = tile->has_item && !Pickup(&tile->item);
+
+    if (tile->c == '<' && input == '<' && game.floor_id < FLOOR_COUNT - 1) {
+        bro_moved = true;
+        game.floor_id++;
+    } else if (tile->c == '>' && input == '>' && game.floor_id) {
+        bro_moved = true;
+        game.floor_id--;
+    }
+
+    if (bro_moved)
+        Discover(&CURRENT_FLOOR, game.player.coord);
+
+    if (input == 'i')
+        WeaponSelector();
+
+    // Attack
+    if (input == ' ')
+        Attack();
+}
+
+void UpdateEnemies() {
+    for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+        Enemy *enemy = &CURRENT_FLOOR.enemies[i];
+        EnemyUpdate(enemy);
+    }
+}
+
+void Damage(Enemy *enemy) {
+    game.player.health -= enemy->type->damage;
+    if (game.player.health <= 0) {
+        game.player.health = 0;
+        game.over = true;
+        game.killer = enemy;
+    }
+}
+
 char g_message_bar[500] = "";
+
+void UpdateMessageBar(bool refresh) {
+    int x, y;
+    getmaxyx(stdscr, x, y);
+
+    for (int i = 0; i < y; i++)
+        mvaddch(0, i, ' ');
+
+    mvprintw(0, 0, "%s", g_message_bar);
+
+    if (refresh)
+        refresh();
+}

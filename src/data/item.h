@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum ItemCategory {
     ItemCategory_Gold,
@@ -56,3 +57,5 @@ typedef struct WeaponType {
 
 extern WeaponType weapons[WeaponTypeCount];
 extern ItemInfo gold_item_info;
+
+bool AreOfSameType(Item *a, Item *b);
