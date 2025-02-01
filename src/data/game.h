@@ -8,6 +8,9 @@
 #define CURRENT_FLOOR game.floors[game.floor_id]
 #define CURRENT_WEAPON game.player.weapons[game.player.equipment]
 
+#define MAX_HEALTH 50
+#define MAX_HUNGER 50
+
 typedef struct Player {
     Coord coord;
     Coord prev_coord;
@@ -18,11 +21,8 @@ typedef struct Player {
 
     int gold;
 
-    // 0 - 20
-    int hunger;
-
-    // 0 - 20
     int health;
+    int hunger;
 } Player;
 
 typedef struct Game {

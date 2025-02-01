@@ -38,6 +38,18 @@ static char *rip[] = {"                       __________",
                       "         ________)/\\\\_//(\\/(/\\)/\\//\\/|_)_______",
                       0};
 
+void TrimString(const char *in, char *out) {
+    int in_len = strlen(in);
+    strcpy(out, in);
+
+    if (strlen(in) > 16) {
+        out[13] = '.';
+        out[14] = '.';
+        out[15] = '.';
+        out[16] = 0;
+    }
+}
+
 void RenderRIP(int x, int y) {
     static WINDOW *win = NULL;
 
@@ -65,8 +77,14 @@ void RenderRIP(int x, int y) {
     mvwprintw(win, 14, 40, "*");
     wattroff(win, COLOR_PAIR(1));
 
-    mvwprintw(win, 9, (58 - strlen(logged_in_user->username)) / 2, "%s", logged_in_user->username);
-    mvwprintw(win, 12, (58 - strlen(game.killer->type->name)) / 2, "%s", game.killer->type->name);
+    mvwprintw(win, 15, 19, "/");
+    mvwprintw(win, 15, 38, "|");
+
+    char buffer[55];
+    TrimString(logged_in_user->username, buffer);
+    mvwprintw(win, 9, (58 - strlen(buffer)) / 2, "%s", buffer);
+    TrimString(game.killer->type->name, buffer);
+    mvwprintw(win, 12, (58 - strlen(buffer)) / 2, "%s", buffer);
 
     wnoutrefresh(win);
 }
@@ -106,10 +124,10 @@ void GameScreenRender(void *selfv) {
     attroff(COLOR_PAIR(5) /*| A_ITALIC*/);
 
     attron(COLOR_PAIR(4));
-    mvprintw(x - 1, 20, "Health: %d/20  ", game.player.health);
+    mvprintw(x - 1, 20, "Health: %d/%d  ", game.player.health, MAX_HEALTH);
     attroff(COLOR_PAIR(4));
 
-    mvprintw(x - 1, 40, "Satiety: %d/20  ", game.player.hunger);
+    mvprintw(x - 1, 40, "Satiety: %d/%d  ", game.player.hunger, MAX_HUNGER);
     mvprintw(x - 1, 60, "Floor: %d", game.floor_id + 1);
     mvprintw(x - 1, 80, "Equipped: %s         ", game.player.weapons[game.player.equipment].info->name);
 

@@ -1,11 +1,16 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "../base.h"
 
 typedef enum EnemyTypeID {
-    EnemyType_Deamon,
+    EnemyType_Demon,
+    EnemyType_FireBreathingMonster,
+    EnemyType_Giant,
+    EnemyType_Snake,
+    EnemyType_Undead,
 
     EnemyTypeCount
 } EnemyTypeID;
@@ -18,6 +23,10 @@ typedef struct EnemyType {
 
     int health;
     int damage;
+
+    // 0 for unlimited
+    int movement_limit;
+    bool can_leave_rooms;
 } EnemyType;
 
 typedef struct Enemy {
@@ -25,6 +34,9 @@ typedef struct Enemy {
 
     EnemyType *type;
     int health;
+    int movement_left;
+
+    bool active; // Only for Undead
 } Enemy;
 
 extern EnemyType enemies[EnemyTypeCount];

@@ -67,8 +67,13 @@ void GenerateFloor(Floor *floor, Floor *prev) {
 
     for (int i = 0; i < 10; i++) {
         floor->enemies[i].coord = GetRandomCoord(floor);
-        floor->enemies[i].type = &enemies[EnemyType_Deamon];
-        floor->enemies[i].health = enemies[EnemyType_Deamon].health;
+        EnemyType *type = &enemies[randn(EnemyTypeCount)];
+        floor->enemies[i].type = type;
+        floor->enemies[i].health = type->health;
+
+        int movement_limit = type->movement_limit;
+        floor->enemies[i].movement_left = movement_limit ? movement_limit : -1;
+        floor->enemies[i].active = false;
     }
 }
 

@@ -22,8 +22,8 @@ void InitPlayer(Player *player, Coord coord) {
 
     game.player.gold = 0;
 
-    game.player.hunger = 20;
-    game.player.health = 20;
+    game.player.health = MAX_HEALTH;
+    game.player.hunger = MAX_HUNGER;
 }
 
 void NewGame() {
@@ -94,6 +94,18 @@ bool Pickup(Item *item) {
     return false;
 }
 
+void ConsumeWeapon() {
+    CURRENT_WEAPON.count--;
+
+    if (CURRENT_WEAPON.count == 0) {
+        memmove(&CURRENT_WEAPON, &CURRENT_WEAPON + 1, (game.player.n_weapons - 1 - game.player.equipment) * sizeof(Item));
+        game.player.n_weapons--;
+
+        if (game.player.equipment >= game.player.n_weapons)
+            game.player.equipment = game.player.n_weapons - 1;
+    }
+}
+
 bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
     sprintf(g_message_bar, "Attacking with %s. Press a direction key.", CURRENT_WEAPON.info->name);
     UpdateMessageBar(true);
@@ -118,7 +130,7 @@ bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
             // We either hit an enemy, or a wall or sth
             if (enemy) {
                 enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage;
-                CURRENT_WEAPON.count--;
+                ConsumeWeapon();
                 (*attackees)++;
                 *attackee = enemy;
                 if (enemy->health <= 0) {
@@ -141,9 +153,6 @@ bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
     }
 
     if (must_drop) {
-        // We hit an obstacle which has some distance from the player
-        CURRENT_WEAPON.count--;
-
         // TODO: Should we override what ever there was?
         Tile *tile = &CURRENT_FLOOR.TILEC(r);
 
@@ -154,6 +163,8 @@ bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
         } else if (AreOfSameType(&tile->item, &CURRENT_WEAPON)) {
             tile->item.count++;
         }
+
+        ConsumeWeapon();
     }
 
     return false;

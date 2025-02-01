@@ -101,18 +101,18 @@ int main() {
         .data = &gs
     };
 
-    Screen *currentScreen = &main_screen;
+    Screen *current_screen = &main_screen;
     Screen *screens[] = { &main_screen, &login_screen, &signup_screen, &pregame_screen, &game_screen };
 
     while (1) {
-        ScreenRender(currentScreen);
+        ScreenRender(current_screen);
         // refresh();
         int ch = getch();
-        int ret = ScreenHandleInput(currentScreen, ch);
+        int ret = ScreenHandleInput(current_screen, ch);
         // fprintf(stderr, "%d\n", ret);
         if (ret >= 0) {
             // TODO: Reset screen?
-            currentScreen = screens[ret];
+            current_screen = screens[ret];
             clear();
         }
     }
