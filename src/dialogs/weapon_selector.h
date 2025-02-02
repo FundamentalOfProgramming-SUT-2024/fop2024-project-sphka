@@ -5,8 +5,8 @@
 
 #include "../data/game.h"
 
-void WeaponSelector() {
-    WINDOW *win = newwin(11, 50, 1, 1);
+void WeaponSelector(int x, int y) {
+    WINDOW *win = newwin(11, 51, (x - 11) / 2, (y - 51) / 2);
     box(win, 0, 0);
 
     wmove(win, 1, 1);
@@ -14,20 +14,20 @@ void WeaponSelector() {
 
     for (int i = 0; i < game.player.n_weapons; i++) {
         Item *weapon = &game.player.weapons[i];
-        wattron(win, COLOR_PAIR(3));
-        mvwprintw(win, i + 2, 1, "%c ", weapon->info->sprite);
-        wattroff(win, COLOR_PAIR(3));
+        wattron(win, COLOR_PAIR(3) | A_BOLD);
+        mvwprintw(win, i + 2, 2, "%c ", weapon->info->sprite);
+        wattroff(win, COLOR_PAIR(3) | A_BOLD);
         wprintw(win, "%s", weapon->info->name);
-        mvwprintw(win, i + 2, 19, "%d", weapon->ex_weapon.type->damage);
+        mvwprintw(win, i + 2, 20, "%d", weapon->ex_weapon.type->damage);
 
         if (weapon->ex_weapon.type->range) {
-            mvwprintw(win, i + 2, 29, "%d", weapon->ex_weapon.type->range);
-            mvwprintw(win, i + 2, 37, "%d", weapon->count);
+            mvwprintw(win, i + 2, 30, "%d", weapon->ex_weapon.type->range);
+            mvwprintw(win, i + 2, 38, "%d", weapon->count);
         }
     }
 
-    mvwprintw(win, 8, 1, "Press a blue letter's key to equip that weapon.");
-    mvwprintw(win, 9, 1, "Press any other key to exit.");
+    mvwprintw(win, 8, 2, "Press a blue letter's key to equip that weapon.");
+    mvwprintw(win, 9, 2, "Press any other key to exit.");
     wrefresh(win);
 
     int ch = wgetch(win);
@@ -47,4 +47,7 @@ void WeaponSelector() {
     } else {
         sprintf(g_message_bar, "Your equipment was not modified (invalid/exit key pressed).");
     }
+
+    clear();
+    delwin(win);
 }

@@ -45,17 +45,7 @@ static inline uint32_t GetTileCharFlags(char c) {
     return flags;
 }
 
-static inline uint32_t GetTileSprite(Tile *tile) {
-    if (tile->is_visible) {
-        if (tile->has_item)
-            return tile->item.info->sprite;
-        else
-            return tile->c | GetTileCharFlags(tile->c);
-    } else {
-        return ' ';
-    }
-}
-
+uint32_t GetTileSprite(Tile *tile);
 bool IsTilePassable(Coord coord, Enemy **enemy_out);
 
 typedef struct {

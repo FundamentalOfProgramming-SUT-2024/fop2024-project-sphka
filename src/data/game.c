@@ -3,7 +3,9 @@
 #include <stdlib.h>
 
 #include "input.h"
+#include "item.h"
 #include "dialogs/weapon_selector.h"
+#include "dialogs/food_selector.h"
 
 Game game;
 
@@ -20,6 +22,11 @@ void InitPlayer(Player *player, Coord coord) {
     game.player.weapons[0].count = w_type->collect_count;
     game.player.equipment = 0;
 
+    game.player.normal_food  = 0;
+    game.player.supreme_food = 0;
+    game.player.magical_food = 0;
+    game.player.rotten_food  = 0;
+
     game.player.gold = 0;
 
     game.player.health = MAX_HEALTH;
@@ -28,8 +35,10 @@ void InitPlayer(Player *player, Coord coord) {
 
 void NewGame() {
     game.floor_id = 0;
+    game.map_revealed = false;
     game.over = false;
     game.killer = NULL;
+    game.clock = 0;
 
     for (int i = 0; i < FLOOR_COUNT; i++)
         GenerateFloor(&game.floors[i], i ? &game.floors[i - 1] : NULL);
@@ -58,7 +67,11 @@ bool Move(int input) {
 
 bool Pickup(Item *item) {
     if (item->category == ItemCategory_Gold) {
-        sprintf(g_message_bar, "You picked up %d pieces of Gold.", item->count);
+        if (item->info == &gold_item_info)
+            sprintf(g_message_bar, "You picked up %d pieces of Gold.", item->count);
+        else
+            sprintf(g_message_bar, "You picked up %d pieces of Gold via Dark Gold.", item->count);
+
         game.player.gold += item->count;
         return true;
     } else if (item->category == ItemCategory_Weapon) {
@@ -89,6 +102,17 @@ bool Pickup(Item *item) {
         }
 
         return item->ex_weapon.type->range || !slot;
+    } else if (item->category == ItemCategory_Food) {
+        int *foods = game.player.foods;
+        int total_foods = foods[0] + foods[1] + foods[2] + foods[3];
+        if (total_foods < 5) {
+            sprintf(g_message_bar, "You picked up a piece of %s.", item->info->name);
+            foods[item->ex_food.type] += 1;
+            return true;
+        } else {
+            sprintf(g_message_bar, "You can't carry more than 5 food items!");
+            return false;
+        }
     }
 
     return false;
@@ -232,12 +256,33 @@ void UpdatePlayer(int input) {
     if (bro_moved)
         Discover(&CURRENT_FLOOR, game.player.coord);
 
+    int x, y;
+    getmaxyx(stdscr, x, y);
+
     if (input == 'i')
-        WeaponSelector();
+        WeaponSelector(x, y);
+
+    if (input == 'f')
+        FoodSelector(x, y);
 
     // Attack
     if (input == ' ')
         Attack();
+
+    if (EVERY(2) && game.player.hunger > 40) {
+        int heal = (game.player.hunger - 40) / 2;
+        game.player.health += heal;
+
+        if (game.player.health > MAX_HEALTH) {
+            game.player.health = MAX_HEALTH;
+        }
+    }
+
+    if (EVERY(5)) {
+        game.player.hunger--;
+        if (game.player.hunger < 0)
+            game.player.hunger = 0;
+    }
 }
 
 void UpdateEnemies() {
@@ -254,6 +299,50 @@ void Damage(Enemy *enemy) {
         game.over = true;
         game.killer = enemy;
     }
+}
+
+void ConsumeFood(FoodType type) {
+    game.player.foods[type]--;
+
+    switch (type)
+    {
+    case FoodType_Magical:
+        game.player.health += 30;
+        game.player.hunger += 30;
+        break;
+
+    case FoodType_Supreme:
+        game.player.health += 20;
+        game.player.hunger += 20;
+        break;
+
+    case FoodType_Normal:
+        game.player.health += 15;
+        game.player.hunger += 15;
+        break;
+
+    case FoodType_Rotten:
+        game.player.health -= 10;
+        break;
+
+    default:
+        break;
+    }
+
+    if (type != FoodType_Rotten)
+        sprintf(g_message_bar, "You ate a piece of %s!", foods[type].name);
+    else
+        sprintf(g_message_bar, "You ate a piece of Rotten Food. You have been poisoned!");
+
+    if (game.player.health <= 0) {
+        game.player.health = 0;
+        game.over = true;
+    } else if (game.player.health > MAX_HEALTH) {
+        game.player.health = MAX_HEALTH;
+    }
+
+    if (game.player.hunger > MAX_HUNGER)
+        game.player.hunger = MAX_HUNGER;
 }
 
 char g_message_bar[500] = "";

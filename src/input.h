@@ -1,9 +1,10 @@
 #include <ncurses.h>
+#include <ctype.h>
 
 #include "base.h"
 
 static inline bool IgnoreCaseEq(int input, char c) {
-    return c == input || (c - 'a' + 'A') == input;
+    return tolower(input) == tolower(c);
 }
 
 static inline bool IsUp(int input) {

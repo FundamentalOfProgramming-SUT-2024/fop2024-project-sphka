@@ -14,6 +14,17 @@ void DoCorridors(Floor *floor);
 void ConnectRooms(Floor *floor, int i, int j);
 void DoItems(Floor *floor);
 
+uint32_t GetTileSprite(Tile *tile) {
+    if (tile->is_visible || game.map_revealed) {
+        if (tile->has_item)
+            return tile->item.info->sprite;
+        else
+            return tile->c | GetTileCharFlags(tile->c);
+    } else {
+        return ' ';
+    }
+}
+
 bool IsTilePassable(Coord coord, Enemy **enemy_out) {
     if (strchr(".+#<>", CURRENT_FLOOR.TILEC(coord).c) == NULL)
         return false;
@@ -337,6 +348,48 @@ void DoItems(Floor *floor) {
         floor->TILEC(coord).item.category = ItemCategory_Gold;
         floor->TILEC(coord).item.info = &gold_item_info;
         floor->TILEC(coord).item.count = randn(6) + 5;
+
+        items_left--;
+    }
+
+    items_left = randn(3);
+    while (items_left) {
+        Coord coord = GetRandomCoord(floor);
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+            continue;
+
+        floor->TILEC(coord).has_item = true;
+        floor->TILEC(coord).item.category = ItemCategory_Gold;
+        floor->TILEC(coord).item.info = &dark_gold_item_info;
+        floor->TILEC(coord).item.count = randn(20) + 50;
+
+        items_left--;
+    }
+
+    // Foods
+    items_left = 5 + randn(5);
+    while (items_left) {
+        Coord coord = GetRandomCoord(floor);
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+            continue;
+
+        floor->TILEC(coord).has_item = true;
+
+        FoodType food_type;
+        float food_type_f = randf();
+        if (food_type_f <= 0.5)
+            food_type = FoodType_Normal;
+        else if (food_type_f <= 0.7)
+            food_type = FoodType_Supreme;
+        else if (food_type_f <= 0.8)
+            food_type = FoodType_Magical;
+        else
+            food_type = FoodType_Rotten;
+
+        floor->TILEC(coord).item.category = ItemCategory_Food;
+        floor->TILEC(coord).item.info = &foods[food_type];
+        floor->TILEC(coord).item.ex_food.type = food_type;
+        floor->TILEC(coord).item.count = 1;
 
         items_left--;
     }

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 UserManager usermanager;
 User *logged_in_user = NULL;
@@ -13,29 +14,30 @@ User **LoadUsers(char *filename, int *n_users);
 int WriteUsers(char *filename, User **users, int n_users);
 
 // TODO: is this valid?
-int IsEmailValid(char *email) {
+bool IsEmailValid(char *email) {
     //         abc@xyz.com
     // region: 000 111 222
 
     // TODO:
-    for (int region = 0; *email; email++) {
+    int region = 0;
+    for (; *email; email++) {
         // printf("'%c', %d\n", *email, region);
-        if (!isalnum(*email) && !(*email == '_')) {
+        if (!isalnum(*email) && *email != '_' && !(region == 0 && *email == '.')) {
             char expecting;
             if (region == 0) expecting = '@';
-            else if (region == 1) expecting = '.';
-            else return 0;
+            else /*if (region == 1)*/ expecting = '.';
+            // else return 0;
             // printf("'%c', %d ex=%c\n", *email, region, expecting);
 
             region++;
             if (*email != expecting)
-                return 0;
+                return false;
         }
     }
 
     // printf("Finally\n");
 
-    return 1;
+    return region == 2;
 }
 
 int UserManagerInit(UserManager *userman) {

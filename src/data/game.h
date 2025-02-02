@@ -19,17 +19,30 @@ typedef struct Player {
     int n_weapons;
     int equipment;
 
+    union {
+        int foods[4];
+        struct {
+            int normal_food;
+            int supreme_food;
+            int magical_food;
+            int rotten_food;
+        };
+    };
+
     int gold;
 
     int health;
     int hunger;
 } Player;
 
+#define EVERY(n) ((game.clock + 1) % n == 0)
 typedef struct Game {
     Player player;
+    unsigned clock;
 
     int floor_id;
     Floor floors[FLOOR_COUNT];
+    bool map_revealed;
 
     bool over;
     Enemy *killer;
@@ -45,3 +58,5 @@ void NewGame();
 void UpdatePlayer(int input);
 void UpdateEnemies();
 void Damage(Enemy *enemy);
+
+void ConsumeFood(FoodType type);

@@ -6,6 +6,7 @@
 typedef enum ItemCategory {
     ItemCategory_Gold,
     ItemCategory_Weapon,
+    ItemCategory_Food,
 
     ItemCategoryCount,
 } ItemCategory;
@@ -29,9 +30,22 @@ typedef struct Item {
         struct Weapon {
             WeaponType *type;
         } ex_weapon;
+
+        struct Food {
+            enum FoodType {
+                FoodType_Magical,
+                FoodType_Supreme,
+                FoodType_Normal,
+                FoodType_Rotten,
+
+                FoodTypeCount
+            } type;
+        } ex_food;
     };
     
 } Item;
+
+typedef enum FoodType FoodType;
 
 typedef enum WeaponTypeID {
     WeaponType_Mace,
@@ -56,6 +70,10 @@ typedef struct WeaponType {
 } WeaponType;
 
 extern WeaponType weapons[WeaponTypeCount];
+extern ItemInfo foods[FoodTypeCount];
+
 extern ItemInfo gold_item_info;
+extern ItemInfo dark_gold_item_info;
+
 
 bool AreOfSameType(Item *a, Item *b);

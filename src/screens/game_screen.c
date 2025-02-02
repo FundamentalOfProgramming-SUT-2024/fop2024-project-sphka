@@ -1,6 +1,7 @@
 #include "game_screen.h"
 
 #include <stdlib.h>
+#include <ctype.h>
 #include <ncurses.h>
 
 #include "input.h"
@@ -12,12 +13,16 @@ void GameScreenInit(GameScreen *self) {
 int GameScreenHandleInput(void *selfv, int input) {
     GameScreen *self = (GameScreen *)selfv;
 
+    if (tolower(input) == 'm')
+        game.map_revealed = !game.map_revealed;
+
     if (input == KEY_RESIZE)
         clear();
 
     if (!game.over) {
         UpdatePlayer(input);
         UpdateEnemies();
+        game.clock++;
     }
 
     return -1;
@@ -39,10 +44,9 @@ static char *rip[] = {"                       __________",
                       0};
 
 void TrimString(const char *in, char *out) {
-    int in_len = strlen(in);
     strcpy(out, in);
 
-    if (strlen(in) > 16) {
+    if (strlen(out) > 16) {
         out[13] = '.';
         out[14] = '.';
         out[15] = '.';
@@ -65,7 +69,7 @@ void RenderRIP(int x, int y) {
     for (char **rip_ptr = rip; *rip_ptr; rip_ptr++) {
         if (i == 12)
             wattron(win, COLOR_PAIR(4));
-        mvwprintw(win, i + 3, 1, *rip_ptr);
+        mvwprintw(win, i + 3, 1, "%s", *rip_ptr);
         if (i == 12)
             wattroff(win, COLOR_PAIR(4));
         i++;
@@ -85,6 +89,9 @@ void RenderRIP(int x, int y) {
     mvwprintw(win, 9, (58 - strlen(buffer)) / 2, "%s", buffer);
     TrimString(game.killer->type->name, buffer);
     mvwprintw(win, 12, (58 - strlen(buffer)) / 2, "%s", buffer);
+
+    if (game.killer->type->id == EnemyType_Undead)
+        mvwaddch(win, 11, 34, 'n');
 
     wnoutrefresh(win);
 }
@@ -111,7 +118,7 @@ void GameScreenRender(void *selfv) {
     for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
         Enemy *enemy = &CURRENT_FLOOR.enemies[i];
 
-        if (enemy->health && CanSee(&CURRENT_FLOOR, game.player.coord, enemy->coord))
+        if (enemy->health && (game.map_revealed || CanSee(&CURRENT_FLOOR, game.player.coord, enemy->coord)))
             mvaddch(enemy->coord.x, enemy->coord.y, enemy->type->sprite);
     }
 
@@ -127,9 +134,12 @@ void GameScreenRender(void *selfv) {
     mvprintw(x - 1, 20, "Health: %d/%d  ", game.player.health, MAX_HEALTH);
     attroff(COLOR_PAIR(4));
 
-    mvprintw(x - 1, 40, "Satiety: %d/%d  ", game.player.hunger, MAX_HUNGER);
+    attron(COLOR_PAIR(1));
+    mvprintw(x - 1, 40, "Hunger: %d/%d  ", game.player.hunger, MAX_HUNGER);
+    attroff(COLOR_PAIR(1));
     mvprintw(x - 1, 60, "Floor: %d", game.floor_id + 1);
     mvprintw(x - 1, 80, "Equipped: %s         ", game.player.weapons[game.player.equipment].info->name);
+    mvprintw(x - 1, 100, "Foods: %d %d %d %d      ", game.player.foods[0], game.player.foods[1], game.player.foods[2], game.player.foods[3]);
 
     wnoutrefresh(stdscr);
 

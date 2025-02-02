@@ -40,9 +40,35 @@ WeaponType weapons[WeaponTypeCount] = {
     }
 };
 
+ItemInfo foods[FoodTypeCount] = {
+    {
+        .sprite = 'f' | COLOR_PAIR(3),
+        .name = "Magical Food"
+    },
+    {
+        .sprite = 'f' | COLOR_PAIR(2),
+        .name = "Supreme Food"
+    },
+    {
+        .sprite = 'f' | COLOR_PAIR(1),
+        .name = "Normal Food"
+    },
+
+    // Fake rotten food!
+    {
+        .sprite = 'f' | COLOR_PAIR(1),
+        .name = "Normal Food"
+    }
+};
+
 ItemInfo gold_item_info = {
     .sprite = '$' | COLOR_PAIR(5),
     .name = "Gold"
+};
+
+ItemInfo dark_gold_item_info = {
+    .sprite = '$' | A_REVERSE,
+    .name = "Dark Gold"
 };
 
 bool AreOfSameType(Item *a, Item *b) {
