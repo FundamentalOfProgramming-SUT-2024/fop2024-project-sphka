@@ -15,8 +15,8 @@ typedef struct Player {
     Coord coord;
     Coord prev_coord;
 
-    Item weapons[5];
     int n_weapons;
+    Item weapons[5];
     int equipment;
 
     union {
@@ -33,6 +33,7 @@ typedef struct Player {
 
     int health;
     int hunger;
+    uint8_t anchor;
 } Player;
 
 #define EVERY(n) ((game.clock + 1) % n == 0)

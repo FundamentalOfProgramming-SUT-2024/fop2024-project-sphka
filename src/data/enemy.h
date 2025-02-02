@@ -32,11 +32,11 @@ typedef struct EnemyType {
 typedef struct Enemy {
     Coord coord;
 
-    EnemyType *type;
     int health;
     int movement_left;
 
     bool active; // Only for Undead
+    EnemyType *type;
 } Enemy;
 
 extern EnemyType enemies[EnemyTypeCount];

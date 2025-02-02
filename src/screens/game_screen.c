@@ -1,17 +1,27 @@
 #include "game_screen.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <ncurses.h>
 
 #include "input.h"
 #include "../data/users.h"
 
+void SerializeGame(FILE *file, const Game *game);
+
 void GameScreenInit(GameScreen *self) {
 }
 
 int GameScreenHandleInput(void *selfv, int input) {
     GameScreen *self = (GameScreen *)selfv;
+
+    if (input == KEY_F(1)) {
+        FILE *file = fopen("save.data", "wb");
+        SerializeGame(file, &game);
+        fflush(file);
+        fclose(file);
+    }
 
     if (tolower(input) == 'm')
         game.map_revealed = !game.map_revealed;
@@ -101,7 +111,8 @@ void GameScreenRender(void *selfv) {
 
     int x, y;
     getmaxyx(stdscr, x, y);
-    
+
+    mvprintw(x - 2, 0, "Press F1 to save and return.");
     UpdateMessageBar(false);
 
     for (int _i = 1; _i < x - 1; _i++)

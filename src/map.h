@@ -67,8 +67,8 @@ typedef struct {
     Room rooms[9];
     Coord down_stairs;
 
-    Enemy enemies[10];
     int n_enemies;
+    Enemy enemies[10];
 } Floor;
 
 void GenerateFloor(Floor *floor, Floor *prev);

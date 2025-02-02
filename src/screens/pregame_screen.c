@@ -7,6 +7,8 @@
 #include "../data/users.h"
 #include "../data/game.h"
 
+void DeserializeGame(FILE *file, Game *game);
+
 void PregameScreenInit(PregameScreen *self) {
     self->menu.n_entries = 4;
     self->menu.entries = malloc(self->menu.n_entries * sizeof(char *));
@@ -29,7 +31,13 @@ int PregameScreenHandleInput(void *selfv, int input) {
         case 0:
             NewGame();
             return 4;
-        // case 1: return 1;
+        case 1:
+            {
+                FILE *file = fopen("save.data", "rb");
+                DeserializeGame(file, &game);
+                fclose(file);
+                return 4;
+            }
         default:
             break;
         }

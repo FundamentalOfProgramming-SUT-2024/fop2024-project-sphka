@@ -42,7 +42,6 @@ typedef struct Item {
             } type;
         } ex_food;
     };
-    
 } Item;
 
 typedef enum FoodType FoodType;
