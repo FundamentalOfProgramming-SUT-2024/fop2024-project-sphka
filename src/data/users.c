@@ -9,6 +9,11 @@
 
 UserManager usermanager;
 User *logged_in_user = NULL;
+User guest = {
+    .username = "Guest",
+    .email = "guest-email@gmail.com",
+    .password = "uwu",
+};
 
 User **LoadUsers(char *filename, int *n_users);
 int WriteUsers(char *filename, User **users, int n_users);

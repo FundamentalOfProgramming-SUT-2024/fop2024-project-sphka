@@ -11,6 +11,7 @@ typedef struct {
 } User;
 
 extern User *logged_in_user;
+extern User guest;
 
 typedef struct {
     User **users;

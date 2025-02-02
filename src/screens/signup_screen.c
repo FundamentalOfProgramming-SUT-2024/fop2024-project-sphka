@@ -149,9 +149,9 @@ void SignupScreenRender(void *selfv) {
 
     int x, y;
     getmaxyx(stdscr, x, y);
-    mvprintw(x / 2 - 6, y / 2 - 7, "   - ");
+    mvprintw(x / 2 - 6, y / 2 - 9, "   - ");
     attron(A_ITALIC | A_BOLD);
-    printw("Signup");
+    printw("Register");
     attroff(A_ITALIC | A_BOLD);
     printw(" -   ");
 

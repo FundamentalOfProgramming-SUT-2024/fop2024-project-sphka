@@ -17,10 +17,14 @@ int GameScreenHandleInput(void *selfv, int input) {
     GameScreen *self = (GameScreen *)selfv;
 
     if (input == KEY_F(1)) {
-        FILE *file = fopen("save.data", "wb");
+        char filename[100];
+        sprintf(filename, "%s-save.data", logged_in_user->username);
+        FILE *file = fopen(filename, "wb");
         SerializeGame(file, &game);
         fflush(file);
         fclose(file);
+
+        return 3;
     }
 
     if (tolower(input) == 'm')
@@ -142,15 +146,15 @@ void GameScreenRender(void *selfv) {
     attroff(COLOR_PAIR(5) /*| A_ITALIC*/);
 
     attron(COLOR_PAIR(4));
-    mvprintw(x - 1, 20, "Health: %d/%d  ", game.player.health, MAX_HEALTH);
+    mvprintw(x - 1, 13, "Health: %d/%d  ", game.player.health, MAX_HEALTH);
     attroff(COLOR_PAIR(4));
 
     attron(COLOR_PAIR(1));
-    mvprintw(x - 1, 40, "Hunger: %d/%d  ", game.player.hunger, MAX_HUNGER);
+    mvprintw(x - 1, 30, "Hunger: %d/%d  ", game.player.hunger, MAX_HUNGER);
     attroff(COLOR_PAIR(1));
-    mvprintw(x - 1, 60, "Floor: %d", game.floor_id + 1);
-    mvprintw(x - 1, 80, "Equipped: %s         ", game.player.weapons[game.player.equipment].info->name);
-    mvprintw(x - 1, 100, "Foods: %d %d %d %d      ", game.player.foods[0], game.player.foods[1], game.player.foods[2], game.player.foods[3]);
+    mvprintw(x - 1, 48, "Floor: %d", game.floor_id + 1);
+    mvprintw(x - 1, 60, "Equipped: %s         ", game.player.weapons[game.player.equipment].info->name);
+    // mvprintw(x - 1, 100, "Foods: %d %d %d %d      ", game.player.foods[0], game.player.foods[1], game.player.foods[2], game.player.foods[3]);
 
     wnoutrefresh(stdscr);
 

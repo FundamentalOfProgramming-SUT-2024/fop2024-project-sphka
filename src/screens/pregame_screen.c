@@ -14,7 +14,7 @@ void PregameScreenInit(PregameScreen *self) {
     self->menu.entries = malloc(self->menu.n_entries * sizeof(char *));
     self->menu.entries[0] = "   New  Game   ";
     self->menu.entries[1] = "   Load Game   ";
-    self->menu.entries[2] = "  Leaderboard  ";
+    self->menu.entries[2] = "   Scoreboard  ";
     self->menu.entries[3] = "     Logout    ";
     self->menu.selected = 0;
 }
@@ -33,11 +33,17 @@ int PregameScreenHandleInput(void *selfv, int input) {
             return 4;
         case 1:
             {
-                FILE *file = fopen("save.data", "rb");
+                char filename[100];
+                sprintf(filename, "%s-save.data", logged_in_user->username);
+                FILE *file = fopen(filename, "rb");
                 DeserializeGame(file, &game);
                 fclose(file);
                 return 4;
             }
+
+        case 3:
+            logged_in_user = NULL;
+            return 0;
         default:
             break;
         }
@@ -53,7 +59,7 @@ void PregameScreenRender(void *selfv) {
 
     int x, y;
     getmaxyx(stdscr, x, y);
-    mvprintw(x / 2 - 2, (y - (10 + strlen(logged_in_user->username))) / 2, "Welcome, %s!", logged_in_user->username);
+    mvprintw(x / 2 - 2, (y - (9 + strlen(logged_in_user->username))) / 2, "Welcome, %s!", logged_in_user->username);
 
     self->menu.x = x / 2;
     self->menu.y = y / 2 - 10;

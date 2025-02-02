@@ -3,13 +3,15 @@
 #include <stdlib.h>
 #include <ncurses.h>
 
+#include "../data/users.h"
+
 void MainScreenInit(MainScreen *self) {
     self->menu.n_entries = 4;
     self->menu.entries = malloc(self->menu.n_entries * sizeof(char *));
-    self->menu.entries[0] = "  Create user  ";
+    self->menu.entries[0] = "    Register   ";
     self->menu.entries[1] = "     Login     ";
     self->menu.entries[2] = "  Guest login  ";
-    self->menu.entries[3] = "  Leaderboard  ";
+    self->menu.entries[3] = "   Scoreboard  ";
     self->menu.selected = 0;
 }
 
@@ -24,6 +26,9 @@ int MainScreenHandleInput(void *selfv, int input) {
         {
         case 0: return 2;
         case 1: return 1;
+        case 2:
+            logged_in_user = &guest;
+            return 3;
         default:
             break;
         }
