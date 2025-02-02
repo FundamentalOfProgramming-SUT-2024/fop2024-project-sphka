@@ -4,10 +4,11 @@
 
 #define USERS_FILE "users.data"
 
-typedef struct {
+typedef struct User {
     char username[50];
     char email[50];
     char password[50];
+    int highscore;
 } User;
 
 extern User *logged_in_user;

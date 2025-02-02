@@ -13,6 +13,7 @@ User guest = {
     .username = "Guest",
     .email = "guest-email@gmail.com",
     .password = "uwu",
+    .highscore = 420
 };
 
 User **LoadUsers(char *filename, int *n_users);
@@ -77,6 +78,7 @@ int UserManagerRegister(UserManager *userman, char *username, char *email, char 
     strncpy(user->username, username, 50);
     strncpy(user->email, email, 50);
     strncpy(user->password, password, 50);
+    user->highscore = 0;
 
     UserManagerFlush(userman);
 
@@ -113,6 +115,7 @@ User **LoadUsers(char *filename, int *n_users) {
 
     char buffer[51];
     int read_count = 0;
+    char highscore_buffer[10];
 
     while ((read_count = fread(buffer, 1, 50, file))) {
         for (int i = 0; i < read_count; i++) {
@@ -123,9 +126,11 @@ User **LoadUsers(char *filename, int *n_users) {
                 target = users[user]->email;
             else if (field == 2)
                 target = users[user]->password;
+            else if (field == 3)
+                target = highscore_buffer;
 
             if (buffer[i] == '\t') {
-                if (field == 2) {
+                if (field == 3) {
                     // TODO: Handle memory leaks
                     free(users);
                     return NULL;
@@ -134,12 +139,13 @@ User **LoadUsers(char *filename, int *n_users) {
                 field++;
                 offset = 0;
             } else if (buffer[i] == '\n') {
-                if (field != 2) {
+                if (field != 3) {
                     free(users);
                     return NULL;
                 }
                 target[offset] = 0;
-                fprintf(stdout, "User { u='%s', e='%s', p='%s' }\n", users[user]->username, users[user]->email, users[user]->password);
+                sscanf(target, "%d", &users[user]->highscore);
+                fprintf(stdout, "User { u='%s', e='%s', p='%s', s=%d }\n", users[user]->username, users[user]->email, users[user]->password, users[user]->highscore);
                 user++;
                 users[user] = malloc(sizeof(User));
                 users = realloc(users, (user + 1) * sizeof(User));
@@ -184,7 +190,8 @@ int WriteUsers(char *filename, User **users, int n_users) {
         return -1;
 
     for (int i = 0; i < n_users; i++) {
-        fprintf(file, "%s\t%s\t%s\n", users[i]->username, users[i]->email, users[i]->password);
+        User *u = users[i];
+        fprintf(file, "%s\t%s\t%s\t%d\n", u->username, u->email, u->password, u->highscore);
     }
 
     fflush(file);

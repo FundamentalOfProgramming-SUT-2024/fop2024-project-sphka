@@ -33,7 +33,15 @@ int GameScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();
 
-    if (!game.over) {
+    if (game.over) {
+        if (input == ' ') {
+            int new_score = game.player.gold * 2;
+            if (new_score > logged_in_user->highscore)
+                logged_in_user->highscore = new_score;
+            UserManagerFlush(&usermanager);
+            return 3;
+        }
+    } else {
         UpdatePlayer(input);
         UpdateEnemies();
         game.clock++;
@@ -55,6 +63,9 @@ static char *rip[] = {"                       __________",
                       "                  |       1980       |",
                       "                 *|     *  *  *      | *",
                       "         ________)/\\\\_//(\\/(/\\)/\\//\\/|_)_______",
+                      "",
+                      "",
+                      "                 Press space to continue",
                       0};
 
 void TrimString(const char *in, char *out) {
@@ -75,7 +86,7 @@ void RenderRIP(int x, int y) {
     if (win)
         delwin(win);
 
-    win = newwin(20, 60, (x - 20) / 2, (y - 60) / 2);
+    win = newwin(22, 60, (x - 22) / 2, (y - 60) / 2);
 
     box(win, 0, 0);
 

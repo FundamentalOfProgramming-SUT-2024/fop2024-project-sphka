@@ -40,7 +40,8 @@ int PregameScreenHandleInput(void *selfv, int input) {
                 fclose(file);
                 return 4;
             }
-
+        case 2:
+            return 5;
         case 3:
             logged_in_user = NULL;
             return 0;

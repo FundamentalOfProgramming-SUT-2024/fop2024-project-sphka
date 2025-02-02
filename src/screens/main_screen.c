@@ -29,6 +29,7 @@ int MainScreenHandleInput(void *selfv, int input) {
         case 2:
             logged_in_user = &guest;
             return 3;
+        case 3: return 5;
         default:
             break;
         }
