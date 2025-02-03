@@ -125,10 +125,10 @@ void RenderRIP(int x, int y) {
     char buffer[55];
     TrimString(logged_in_user->username, buffer);
     mvwprintw(win, 9, (58 - strlen(buffer)) / 2, "%s", buffer);
-    TrimString(game.killer->type->name, buffer);
+    TrimString(game.killer ? game.killer->type->name : "p. of Rotten Food", buffer);
     mvwprintw(win, 12, (58 - strlen(buffer)) / 2, "%s", buffer);
 
-    if (game.killer->type->id == EnemyType_Undead)
+    if (game.killer && game.killer->type->id == EnemyType_Undead)
         mvwaddch(win, 11, 34, 'n');
 
     wnoutrefresh(win);

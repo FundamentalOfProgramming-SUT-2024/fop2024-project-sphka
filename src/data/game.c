@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "input.h"
 #include "item.h"
@@ -146,7 +147,41 @@ bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
         return true;
     }
 
+    const char *direction_char = "";
+
+    if (delta.x == -1) {
+        switch (delta.y)
+        {
+        case -1: direction_char = "\u2196"; break;
+        case 0: direction_char = "\u2191"; break;
+        case 1: direction_char = "\u2197"; break;
+        
+        default:
+            break;
+        }
+    } else if (delta.x == 0) {
+        switch (delta.y)
+        {
+        case -1: direction_char = "\u2190"; break;
+        case 1: direction_char = "\u2192"; break;
+        
+        default:
+            break;
+        }
+    } else if (delta.x == 1) {
+        switch (delta.y)
+        {
+        case -1: direction_char = "\u2199"; break;
+        case 0: direction_char = "\u2193"; break;
+        case 1: direction_char = "\u2198"; break;
+        
+        default:
+            break;
+        }
+    }
+
     Coord r = game.player.coord;
+    chtype fb_backup = 0;
     int i = 0;
     bool must_drop = false;
     while (true) {
@@ -176,6 +211,15 @@ bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
             break;
         } else {
             // Move on
+
+            if (i)
+                mvaddch(r.x, r.y, fb_backup);
+
+            fb_backup = mvinch(next_r.x, next_r.y);
+            mvprintw(next_r.x, next_r.y, "%s", direction_char);
+            refresh();
+            usleep(100000);
+
             r = next_r;
             i++;
         }
@@ -362,6 +406,7 @@ void ConsumeFood(FoodType type) {
         sprintf(g_message_bar, "You ate a piece of Rotten Food. You have been poisoned!");
 
     if (game.player.health <= 0) {
+        game.killer = NULL;
         game.player.health = 0;
         game.over = true;
     } else if (game.player.health > MAX_HEALTH) {
