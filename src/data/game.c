@@ -287,10 +287,28 @@ void UpdatePlayer(int input) {
         }
     }
 
-    if ((double_speed ? EVERY(10): EVERY(5))) {
+    if (double_speed ? EVERY(10): EVERY(5)) {
         game.player.hunger--;
         if (game.player.hunger < 0)
             game.player.hunger = 0;
+    }
+
+    if (double_speed ? EVERY(20): EVERY(10)) {
+        // Degrade foods
+        if (game.player.magical_food) {
+            game.player.magical_food--;
+            game.player.supreme_food++;
+        }
+
+        if (game.player.supreme_food) {
+            game.player.supreme_food--;
+            game.player.normal_food++;
+        }
+
+        if (game.player.normal_food) {
+            game.player.normal_food--;
+            game.player.rotten_food++;
+        }
     }
 }
 
