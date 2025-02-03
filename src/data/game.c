@@ -40,6 +40,7 @@ void NewGame() {
     game.map_revealed = false;
     game.over = false;
     game.killer = NULL;
+    game.skip_next_pickup = false;
     game.clock = 0;
 
     for (int i = 0; i < FLOOR_COUNT; i++)
@@ -68,6 +69,11 @@ bool Move(int input) {
 }
 
 bool Pickup(Item *item) {
+    if (game.skip_next_pickup) {
+        strcpy(g_message_bar, "");
+        return false;
+    }
+
     if (item->category == ItemCategory_Gold) {
         if (item->info == &gold_item_info)
             sprintf(g_message_bar, "You picked up %d pieces of Gold.", item->count);
@@ -286,13 +292,17 @@ void Attack() {
         sprintf(g_message_bar, "You hit%s the %s!", attackee->health ? "" : " and kill", attackee->type->name);
 }
 
+static void PickupTile(Tile *tile) {
+    tile->has_item = tile->has_item && !Pickup(&tile->item);
+}
+
 void UpdatePlayer(int input) {
     bool bro_moved = Move(input);
     Tile *tile = &CURRENT_FLOOR.TILEC(game.player.coord);
 
     if (bro_moved)
         // Pickup item
-        tile->has_item = tile->has_item && !Pickup(&tile->item);
+        PickupTile(tile);
 
     if (tile->c == '<' && input == '<' && game.floor_id < FLOOR_COUNT - 1) {
         bro_moved = true;
@@ -420,6 +430,45 @@ void ConsumeFood(FoodType type) {
 void ConsumePotion(PotionType type) {
     game.player.potions[type]--;
     game.player.buffs[type] += 11;
+}
+
+bool FastMove() {
+    int x, y;
+    getmaxyx(stdscr, x, y);
+
+    sprintf(g_message_bar, "Gonna move fast! Press a direction key.");
+    UpdateMessageBar(true);
+
+    Coord delta = InputDirection(getch());
+
+    if (delta.x == 0 && delta.y == 0) {
+        sprintf(g_message_bar, "Invalid key pressed.");
+        return true;
+    }
+
+    Coord r = game.player.coord;
+    while (true) {
+        Coord next_r = r;
+        next_r.x += delta.x;
+        next_r.y += delta.y;
+
+        if (!IsTilePassable(next_r, NULL))
+            break;
+
+        game.player.coord = r;
+        Discover(&CURRENT_FLOOR, next_r);
+        PickupTile(&CURRENT_FLOOR.TILEC(next_r));
+        RenderMap(x, y);
+        doupdate();
+        usleep(100000);
+
+        r = next_r;
+    }
+
+    game.player.coord = r;
+    Discover(&CURRENT_FLOOR, r);
+    strcpy(g_message_bar, "");
+    return false;
 }
 
 char g_message_bar[500] = "";

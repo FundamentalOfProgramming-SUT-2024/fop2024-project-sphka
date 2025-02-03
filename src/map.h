@@ -81,3 +81,5 @@ Coord GetRandomCoord(Floor *floor);
 void Discover(Floor *floor, Coord coord);
 
 bool CanSee(Floor *floor, Coord a, Coord b);
+
+void RenderMap(int x, int y);

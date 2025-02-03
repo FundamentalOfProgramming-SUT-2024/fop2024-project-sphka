@@ -18,7 +18,6 @@ typedef struct Player {
     int n_weapons;
     Item weapons[5];
     int equipment;
-
     union {
         int foods[4];
         struct {
@@ -58,6 +57,7 @@ typedef struct Player {
 typedef struct Game {
     Player player;
     unsigned clock;
+    bool skip_next_pickup;
 
     int floor_id;
     Floor floors[FLOOR_COUNT];
@@ -80,3 +80,4 @@ void Damage(Enemy *enemy);
 
 void ConsumeFood(FoodType type);
 void ConsumePotion(PotionType type);
+bool FastMove();

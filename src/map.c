@@ -520,3 +520,81 @@ bool CanSee(Floor *floor, Coord a, Coord b) {
 
     return CanSeeCross(a, b);
 }
+
+void RenderMap(int x, int y) {
+    for (int _i = 1; _i < x - 1; _i++)
+        for (int j = 0; j < y; j++) {
+            int i = _i;
+
+            if (i < MAXLINES && j < MAXCOLS) {
+                Tile *tile = &CURRENT_FLOOR.TILE(i, j);
+                mvaddch(i, j, GetTileSprite(tile));
+            }
+        }
+
+    // Render enemies
+    for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+        Enemy *enemy = &CURRENT_FLOOR.enemies[i];
+
+        if (enemy->health && (game.map_revealed || CanSee(&CURRENT_FLOOR, game.player.coord, enemy->coord)))
+            mvaddch(enemy->coord.x, enemy->coord.y, enemy->type->sprite);
+    }
+
+    mvaddch(game.player.coord.x, game.player.coord.y, '@' | COLOR_PAIR(4));
+
+    attron(COLOR_PAIR(5));
+    mvprintw(x - 2, 0, "Gold: ");
+    // attron(A_ITALIC);
+    printw("%d$     ", game.player.gold);
+    attroff(COLOR_PAIR(5) /*| A_ITALIC*/);
+
+    attron(COLOR_PAIR(4));
+    mvprintw(x - 2, 13, "Health: %d/%d  ", game.player.health, MAX_HEALTH);
+    attroff(COLOR_PAIR(4));
+
+    attron(COLOR_PAIR(1));
+    mvprintw(x - 2, 30, "Hunger: %d/%d  ", game.player.hunger, MAX_HUNGER);
+    attroff(COLOR_PAIR(1));
+    mvprintw(x - 2, 48, "Floor: %d", game.floor_id + 1);
+    mvprintw(x - 2, 60, "Equipped: %s         ", game.player.weapons[game.player.equipment].info->name);
+    // mvprintw(x - 2, 100, "Foods: %d %d %d %d      ", game.player.foods[0], game.player.foods[1], game.player.foods[2], game.player.foods[3]);
+
+    move(x - 1, 0);
+    deleteln();
+    printw("Exit: ");
+    attron(A_ITALIC);
+    printw("<F1>   ");
+    attroff(A_ITALIC);
+
+    printw("Buffs: ");
+    bool has_any_buffs = false;
+
+    if (game.player.health_buff) {
+        attron(COLOR_PAIR(4));
+        printw("Health: %d moves  ", game.player.health_buff);
+        attroff(COLOR_PAIR(4));
+        has_any_buffs = true;
+    }
+
+    if (game.player.speed_buff) {
+        attron(COLOR_PAIR(6));
+        printw("Speed: %d moves  ", game.player.speed_buff);
+        attroff(COLOR_PAIR(6));
+        has_any_buffs = true;
+    }
+
+    if (game.player.damage_buff) {
+        attron(COLOR_PAIR(1));
+        printw("Damage: %d moves  ", game.player.damage_buff);
+        attroff(COLOR_PAIR(1));
+        has_any_buffs = true;
+    }
+
+    if (!has_any_buffs) {
+        attron(A_ITALIC);
+        printw("None");
+        attroff(A_ITALIC);
+    }
+
+    wnoutrefresh(stdscr);
+}
