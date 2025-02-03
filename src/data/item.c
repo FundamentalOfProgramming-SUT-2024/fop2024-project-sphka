@@ -61,6 +61,21 @@ ItemInfo foods[FoodTypeCount] = {
     }
 };
 
+ItemInfo potions[PotionTypeCount] = {
+    {
+        .sprite = 'h' | COLOR_PAIR(4),
+        .name = "Health Potion"
+    },
+    {
+        .sprite = 's' | COLOR_PAIR(4),
+        .name = "Speed Potion"
+    },
+    {
+        .sprite = 'd' | COLOR_PAIR(4),
+        .name = "Damage Potion"
+    },
+};
+
 ItemInfo gold_item_info = {
     .sprite = '$' | COLOR_PAIR(5),
     .name = "Gold"

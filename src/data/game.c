@@ -6,6 +6,7 @@
 #include "item.h"
 #include "dialogs/weapon_selector.h"
 #include "dialogs/food_selector.h"
+#include "dialogs/potion_selector.h"
 
 Game game;
 
@@ -113,6 +114,10 @@ bool Pickup(Item *item) {
             sprintf(g_message_bar, "You can't carry more than 5 food items!");
             return false;
         }
+    } else if (item->category == ItemCategory_Potion) {
+        sprintf(g_message_bar, "You picked up a %s.", item->info->name);
+        game.player.potions[item->ex_potion.type] += 1;
+        return true;
     }
 
     return false;
@@ -153,7 +158,7 @@ bool RangedAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
         if (!IsTilePassable(next_r, &enemy)) {
             // We either hit an enemy, or a wall or sth
             if (enemy) {
-                enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage;
+                enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage * (game.player.buffs[PotionType_Damage] ? 2 : 1);
                 ConsumeWeapon();
                 (*attackees)++;
                 *attackee = enemy;
@@ -198,7 +203,7 @@ void MeleeAttack(Enemy **attackee, int *attackees, int *dead_enemies) {
     for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
         Enemy *enemy = &CURRENT_FLOOR.enemies[i];
         if (enemy->health && SqDistance(enemy->coord, game.player.coord) <= 2) {
-            enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage;
+            enemy->health -= CURRENT_WEAPON.ex_weapon.type->damage * (game.player.buffs[PotionType_Damage] ? 2 : 1);
             (*attackees)++;
             *attackee = enemy;
             if (enemy->health <= 0) {
@@ -265,20 +270,24 @@ void UpdatePlayer(int input) {
     if (input == 'f')
         FoodSelector(x, y);
 
+    if (input == 'p')
+        PotionSelector(x, y);
+
     // Attack
     if (input == ' ')
         Attack();
 
-    if (EVERY(2) && game.player.hunger > 40) {
-        int heal = (game.player.hunger - 40) / 2;
-        game.player.health += heal;
+    bool double_speed = game.player.buffs[PotionType_Speed] > 0;
+    if ((double_speed ? EVERY(4): EVERY(2)) && game.player.hunger > 30) {
+        int heal = (game.player.hunger - 30) / 2;
+        game.player.health += heal * (game.player.buffs[PotionType_Health] ? 2 : 1);
 
         if (game.player.health > MAX_HEALTH) {
             game.player.health = MAX_HEALTH;
         }
     }
 
-    if (EVERY(5)) {
+    if ((double_speed ? EVERY(10): EVERY(5))) {
         game.player.hunger--;
         if (game.player.hunger < 0)
             game.player.hunger = 0;
@@ -343,6 +352,11 @@ void ConsumeFood(FoodType type) {
 
     if (game.player.hunger > MAX_HUNGER)
         game.player.hunger = MAX_HUNGER;
+}
+
+void ConsumePotion(PotionType type) {
+    game.player.potions[type]--;
+    game.player.buffs[type] += 11;
 }
 
 char g_message_bar[500] = "";

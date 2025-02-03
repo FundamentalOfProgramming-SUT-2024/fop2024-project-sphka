@@ -20,10 +20,13 @@
 
 typedef struct {
     char c;
-    bool is_visible;
-    uint8_t dfs_depth;
+    // uint8_t dfs_depth;
 
-    bool has_item;
+    struct {
+        uint8_t is_visible : 1;
+        uint8_t has_item : 1;
+    };
+
     Item item;
 } Tile;
 

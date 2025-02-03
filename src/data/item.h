@@ -7,6 +7,7 @@ typedef enum ItemCategory {
     ItemCategory_Gold,
     ItemCategory_Weapon,
     ItemCategory_Food,
+    ItemCategory_Potion,
 
     ItemCategoryCount,
 } ItemCategory;
@@ -41,10 +42,21 @@ typedef struct Item {
                 FoodTypeCount
             } type;
         } ex_food;
+
+        struct Potion {
+            enum PotionType {
+                PotionType_Health,
+                PotionType_Speed,
+                PotionType_Damage,
+
+                PotionTypeCount
+            } type;
+        } ex_potion;
     };
 } Item;
 
 typedef enum FoodType FoodType;
+typedef enum PotionType PotionType;
 
 typedef enum WeaponTypeID {
     WeaponType_Mace,
@@ -70,6 +82,7 @@ typedef struct WeaponType {
 
 extern WeaponType weapons[WeaponTypeCount];
 extern ItemInfo foods[FoodTypeCount];
+extern ItemInfo potions[PotionTypeCount];
 
 extern ItemInfo gold_item_info;
 extern ItemInfo dark_gold_item_info;

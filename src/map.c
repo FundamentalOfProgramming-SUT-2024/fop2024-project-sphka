@@ -66,7 +66,7 @@ void GenerateFloor(Floor *floor, Floor *prev) {
         for (int y = 0; y < MAXCOLS; y++) {
             floor->TILE(x, y).c = ' ';
             floor->TILE(x, y).is_visible = false;
-            floor->TILE(x, y).dfs_depth = 10;
+            // floor->TILE(x, y).dfs_depth = 10;
             floor->TILE(x, y).has_item = false;
         }
 
@@ -337,7 +337,7 @@ Coord GetRandomCoord(Floor *floor) {
 }
 
 void DoItems(Floor *floor) {
-    // Put gold pieces
+    // Gold
     int items_left = 10;
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
@@ -352,6 +352,7 @@ void DoItems(Floor *floor) {
         items_left--;
     }
 
+    // Dark gold
     items_left = randn(3);
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
@@ -366,7 +367,7 @@ void DoItems(Floor *floor) {
         items_left--;
     }
 
-    // Foods
+    // Food
     items_left = 5 + randn(5);
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
@@ -394,7 +395,24 @@ void DoItems(Floor *floor) {
         items_left--;
     }
 
-    // Put weapons
+    // Potions
+    items_left = 3;
+    while (items_left) {
+        Coord coord = GetRandomCoord(floor);
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+            continue;
+
+        floor->TILEC(coord).has_item = true;
+        floor->TILEC(coord).item.category = ItemCategory_Potion;
+        PotionType potion_type = items_left - 1;
+        floor->TILEC(coord).item.info = &potions[potion_type];
+        floor->TILEC(coord).item.ex_potion.type = potion_type;
+        floor->TILEC(coord).item.count = 1;
+
+        items_left--;
+    }
+
+    // Weapons
     items_left = 10;
     while (items_left) {
         Coord coord = GetRandomCoord(floor);

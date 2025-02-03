@@ -29,6 +29,24 @@ typedef struct Player {
         };
     };
 
+    union {
+        int potions[4];
+        struct {
+            int health_potion;
+            int speed_potion;
+            int damage_potion;
+        };
+    };
+
+    union {
+        int buffs[4];
+        struct {
+            int health_buff;
+            int speed_buff;
+            int damage_buff;
+        };
+    };
+
     int gold;
 
     int health;
@@ -61,3 +79,4 @@ void UpdateEnemies();
 void Damage(Enemy *enemy);
 
 void ConsumeFood(FoodType type);
+void ConsumePotion(PotionType type);
