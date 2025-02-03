@@ -71,6 +71,7 @@ int main() {
     ScoreboardScreenInit(&sbs);
 
     Screen main_screen = {
+        .Switch = NULL,
         .HandleInput = MainScreenHandleInput,
         .Render = MainScreenRender,
         .Free = MainScreenFree,
@@ -78,27 +79,31 @@ int main() {
     };
 
     Screen login_screen = {
-       .HandleInput = LoginScreenHandleInput,
-       .Render = LoginScreenRender,
-       .Free = LoginScreenFree,
-       .data = &ls
+        .Switch = LoginScreenHandleSwitch,
+        .HandleInput = LoginScreenHandleInput,
+        .Render = LoginScreenRender,
+        .Free = LoginScreenFree,
+        .data = &ls
     };
 
     Screen signup_screen = {
-       .HandleInput = SignupScreenHandleInput,
-       .Render = SignupScreenRender,
-       .Free = SignupScreenFree,
-       .data = &ss
+        .Switch = SignupScreenHandleSwitch,
+        .HandleInput = SignupScreenHandleInput,
+        .Render = SignupScreenRender,
+        .Free = SignupScreenFree,
+        .data = &ss
     };
 
     Screen pregame_screen = {
-       .HandleInput = PregameScreenHandleInput,
-       .Render = PregameScreenRender,
-       .Free = PregameScreenFree,
-       .data = &pgs
+        .Switch = NULL,
+        .HandleInput = PregameScreenHandleInput,
+        .Render = PregameScreenRender,
+        .Free = PregameScreenFree,
+        .data = &pgs
     };
 
     Screen game_screen = {
+        .Switch = NULL,
         .HandleInput = GameScreenHandleInput,
         .Render = GameScreenRender,
         .Free = GameScreenFree,
@@ -106,6 +111,7 @@ int main() {
     };
 
     Screen scoreboard_screen = {
+        .Switch = ScoreboardScreenHandleSwitch,
         .HandleInput = ScoreboardScreenHandleInput,
         .Render = ScoreboardScreenRender,
         .Free = ScoreboardScreenFree,
@@ -124,6 +130,7 @@ int main() {
         if (ret >= 0) {
             // TODO: Reset screen?
             current_screen = screens[ret];
+            ScreenSwitch(current_screen);
             clear();
         }
     }

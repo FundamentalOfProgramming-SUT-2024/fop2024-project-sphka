@@ -13,6 +13,7 @@ typedef struct {
 } LoginScreen;
 
 void LoginScreenInit(LoginScreen *self);
+void LoginScreenHandleSwitch(void *selfv);
 int LoginScreenHandleInput(void *selfv, int input);
 void LoginScreenRender(void *selfv);
 void LoginScreenFree(void *self);

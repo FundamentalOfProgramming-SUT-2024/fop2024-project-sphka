@@ -14,6 +14,7 @@ typedef struct {
 } SignupScreen;
 
 void SignupScreenInit(SignupScreen *self);
+void SignupScreenHandleSwitch(void *selfv);
 int SignupScreenHandleInput(void *self, int input);
 void SignupScreenRender(void *selfv);
 void SignupScreenFree(void *self);

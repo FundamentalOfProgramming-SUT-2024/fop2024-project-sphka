@@ -11,6 +11,7 @@ typedef struct {
 } ScoreboardScreen;
 
 void ScoreboardScreenInit(ScoreboardScreen *self);
+void ScoreboardScreenHandleSwitch(void *selfv);
 int ScoreboardScreenHandleInput(void *self, int input);
 void ScoreboardScreenRender(void *selfv);
 void ScoreboardScreenFree(void *self);

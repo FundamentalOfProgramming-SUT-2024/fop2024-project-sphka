@@ -32,6 +32,13 @@ void LoginScreenInit(LoginScreen *self) {
     strcpy(self->form.fields[2].button.name, "  Login  ");
 }
 
+void LoginScreenHandleSwitch(void *selfv) {
+    LoginScreen *self = (LoginScreen *)selfv;
+    self->form.focus = 0;
+    self->username[0] = 0;
+    self->password[0] = 0;
+}
+
 int LoginScreenHandleInput(void *selfv, int input) {
     if (input == KEY_RESIZE)
         clear();

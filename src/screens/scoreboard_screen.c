@@ -19,11 +19,21 @@ int comp(const void *a_ptr, const void *b_ptr) {
     return 0;
 }
 
+
 void ScoreboardScreenInit(ScoreboardScreen *self) {
     self->page = 0;
-    self->users = malloc(usermanager.n_users * sizeof(User *));
-    memcpy(self->users, usermanager.users, usermanager.n_users * sizeof(User *));
+    self->users = NULL;
 
+    ScoreboardScreenHandleSwitch(self);
+}
+
+void ScoreboardScreenHandleSwitch(void *selfv) {
+    ScoreboardScreen *self = (ScoreboardScreen *)selfv;
+
+    self->page = 0;
+    self->users = realloc(self->users, usermanager.n_users * sizeof(User *));
+
+    memcpy(self->users, usermanager.users, usermanager.n_users * sizeof(User *));
     qsort(self->users, usermanager.n_users, sizeof(User *), comp);
 }
 
@@ -33,7 +43,7 @@ int ScoreboardScreenHandleInput(void *selfv, int input) {
 
     if (input == KEY_F(1)) {
         curs_set(0);
-        return 0;
+        return (logged_in_user ? 3 : 0);
     }
 
     ScoreboardScreen *self = (ScoreboardScreen *)selfv;
@@ -56,6 +66,12 @@ void ScoreboardScreenRender(void *selfv) {
 
     int x, y;
     getmaxyx(stdscr, x, y);
+
+    move(x - 1, 0);
+    printw("Exit: ");
+    attron(A_ITALIC);
+    printw("<F1>   ");
+    attroff(A_ITALIC);
 
     int num_pages = usermanager.n_users / PAGE_SIZE + (usermanager.n_users % PAGE_SIZE > 0);
     int range_max = self->page < num_pages - 1 ? PAGE_SIZE : usermanager.n_users % PAGE_SIZE;

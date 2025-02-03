@@ -43,6 +43,14 @@ void SignupScreenInit(SignupScreen *self) {
     strcpy(self->form.fields[3].button.name, "  Create  ");
 }
 
+void SignupScreenHandleSwitch(void *selfv) {
+    SignupScreen *self = (SignupScreen *)selfv;
+    self->form.n_fields = 4;
+    self->username[0] = 0;
+    self->email[0] = 0;
+    self->password[0] = 0;
+}
+
 static bool CheckPassword(SignupScreen *self) {
     if (strlen(self->password) < 7) {
         self->message.type = MessageType_Error;
