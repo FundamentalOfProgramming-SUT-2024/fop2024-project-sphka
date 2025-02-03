@@ -8,7 +8,11 @@ typedef struct User {
     char username[50];
     char email[50];
     char password[50];
-    int highscore;
+
+    int score_sum;
+    int gold_sum;
+    int game_count;
+    unsigned long long first_game_time;
 } User;
 
 extern User *logged_in_user;

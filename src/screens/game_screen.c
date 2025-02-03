@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 #include <ncurses.h>
 
 #include "input.h"
@@ -23,6 +24,11 @@ int GameScreenHandleInput(void *selfv, int input) {
         SerializeGame(file, &game);
         fflush(file);
         fclose(file);
+
+        if (logged_in_user->first_game_time == 0)
+            logged_in_user->first_game_time = time(NULL);
+
+        UserManagerFlush(&usermanager);
 
         return 3;
     }
@@ -50,9 +56,14 @@ int GameScreenHandleInput(void *selfv, int input) {
 
     if (game.over) {
         if (input == ' ') {
-            int new_score = game.player.gold * 2;
-            if (new_score > logged_in_user->highscore)
-                logged_in_user->highscore = new_score;
+            int score = game.player.gold * 2 + game.player.kills * 5;
+            logged_in_user->score_sum += score;
+            logged_in_user->gold_sum += game.player.gold;
+            logged_in_user->game_count++;
+
+            if (logged_in_user->first_game_time == 0)
+                logged_in_user->first_game_time = time(NULL);
+
             UserManagerFlush(&usermanager);
             return 3;
         }

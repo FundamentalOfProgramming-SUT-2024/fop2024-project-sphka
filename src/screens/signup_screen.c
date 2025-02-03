@@ -49,6 +49,10 @@ void SignupScreenHandleSwitch(void *selfv) {
     self->username[0] = 0;
     self->email[0] = 0;
     self->password[0] = 0;
+
+    self->form.fields[0].textbox.cursor = 0;
+    self->form.fields[1].textbox.cursor = 0;
+    self->form.fields[2].textbox.cursor = 0;
 }
 
 static bool CheckPassword(SignupScreen *self) {

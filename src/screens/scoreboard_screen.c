@@ -5,14 +5,15 @@
 #include <ctype.h>
 #include <string.h>
 #include <ncurses.h>
+#include <time.h>
 
 #include "../input.h"
 
 #define PAGE_SIZE 15
 
 int comp(const void *a_ptr, const void *b_ptr) {
-    int a = (*((User **)a_ptr))->highscore;
-    int b = (*((User **)b_ptr))->highscore;
+    int a = (*((User **)a_ptr))->score_sum;
+    int b = (*((User **)b_ptr))->score_sum;
 
     if (a > b) return -1;
     if (a < b) return 1;
@@ -80,7 +81,10 @@ void ScoreboardScreenRender(void *selfv) {
         User *u = self->users[idx];
 
         char buffer[100];
-        sprintf(buffer, "%d - %s - %d", idx + 1, u->username, u->highscore);
+        sprintf(buffer, "%dth - %s - Score sum: %d - Gold sum: %d - %d game played - Exp: %llus",
+            idx + 1, u->username, u->score_sum, u->gold_sum,
+            u->game_count, time(NULL) - u->first_game_time);
+
         int len = strlen(buffer) + (idx < 3 ? 2 : 0);
 
         if (idx == 0)
@@ -91,15 +95,15 @@ void ScoreboardScreenRender(void *selfv) {
         move(i + (x - range_max) / 2, (y - len) / 2);
         if (idx == 0) {
             attron(COLOR_PAIR(5));
-            printw("(Goat) \U0001F947 ");
+            printw("(\U0001F947 Goat) ");
         }
         else if (idx == 1) {
             attron(COLOR_PAIR(2));
-            printw("(Legend) \U0001F948 ");
+            printw("(\U0001F948 Legend) ");
         }
         else if (idx == 2) {
             attron(COLOR_PAIR(3));
-            printw("(Master) \U0001F949 ");
+            printw("(\U0001F949 Master) ");
         }
         if (u == logged_in_user)
             attron(A_BOLD);

@@ -30,6 +30,7 @@ void InitPlayer(Player *player, Coord coord) {
     game.player.rotten_food  = 0;
 
     game.player.gold = 0;
+    game.player.kills = 0;
 
     game.player.health = MAX_HEALTH;
     game.player.hunger = MAX_HUNGER;
@@ -275,6 +276,8 @@ void Attack() {
     }
     else
         MeleeAttack(&attackee, &attackees, &dead_enemies);
+
+    game.player.kills += dead_enemies;
 
     if (attackees == 0)
         strcpy(g_message_bar, "You miss!");

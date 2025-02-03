@@ -37,6 +37,9 @@ void LoginScreenHandleSwitch(void *selfv) {
     self->form.focus = 0;
     self->username[0] = 0;
     self->password[0] = 0;
+
+    self->form.fields[0].textbox.cursor = 0;
+    self->form.fields[1].textbox.cursor = 0;
 }
 
 int LoginScreenHandleInput(void *selfv, int input) {
