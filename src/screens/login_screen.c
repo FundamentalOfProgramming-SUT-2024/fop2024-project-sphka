@@ -63,13 +63,18 @@ int LoginScreenHandleInput(void *selfv, int input) {
     }
 
     if (out > 0) {
-        User *user = UserManagerLogin(&usermanager, self->username, self->password);
-        if (user == NULL) {
+        if (strlen(self->username) == 0 || strlen(self->password) == 0) {
             self->message.type = MessageType_Error;
-            strcpy(self->message.message, "Wrong username and/or password!");
+            strcpy(self->message.message, "Please fill all fields!");
         } else {
-            logged_in_user = user;
-            return 3;
+            User *user = UserManagerLogin(&usermanager, self->username, self->password);
+            if (user == NULL) {
+                self->message.type = MessageType_Error;
+                strcpy(self->message.message, "Wrong username and/or password!");
+            } else {
+                logged_in_user = user;
+                return 3;
+            }
         }
     }
 

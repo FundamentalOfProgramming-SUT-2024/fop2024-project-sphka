@@ -6,11 +6,13 @@
 #include <string.h>
 #include <ncurses.h>
 
+#include "../random.h"
+
 void SignupScreenInit(SignupScreen *self) {
     self->message.type = MessageType_None;
     self->message.message[0] = '\0';
     
-    self->form.n_fields = 4;
+    self->form.n_fields = 5;
     self->form.focus = 0;
     self->form.render_back_button = true;
 
@@ -40,12 +42,15 @@ void SignupScreenInit(SignupScreen *self) {
 
     self->form.fields[3].type = FIELD_TYPE_BUTTON;
     self->form.fields[3].button.x_offset = 2;
-    strcpy(self->form.fields[3].button.name, "  Create  ");
+
+    self->form.fields[4].type = FIELD_TYPE_BUTTON;
+    self->form.fields[4].button.x_offset = 0;
+    strcpy(self->form.fields[3].button.name, "        Create       ");
+    strcpy(self->form.fields[4].button.name, "  Generate password  ");
 }
 
 void SignupScreenHandleSwitch(void *selfv) {
     SignupScreen *self = (SignupScreen *)selfv;
-    self->form.n_fields = 4;
     self->username[0] = 0;
     self->email[0] = 0;
     self->password[0] = 0;
@@ -53,6 +58,16 @@ void SignupScreenHandleSwitch(void *selfv) {
     self->form.fields[0].textbox.cursor = 0;
     self->form.fields[1].textbox.cursor = 0;
     self->form.fields[2].textbox.cursor = 0;
+}
+
+static bool CheckEmail(SignupScreen *self) {
+    if (!IsEmailValid(self->email)) {
+        self->message.type = MessageType_Error;
+        strcpy(self->message.message, "Invalid email!");
+        return false;
+    }
+
+    return true;
 }
 
 static bool CheckPassword(SignupScreen *self) {
@@ -124,9 +139,11 @@ int SignupScreenHandleInput(void *selfv, int input) {
         return 0;
     }
 
-    if (out > 0) {
-        // ُTODO: Check email
-        if (CheckPassword(self)) {
+    if (out == 3) {
+        if (strlen(self->username) == 0 || strlen(self->email) == 0 || strlen(self->password) == 0) {
+            self->message.type = MessageType_Error;
+            strcpy(self->message.message, "Please fill all fields!");
+        } else if (CheckEmail(self) && CheckPassword(self)) {
             int reg = UserManagerRegister(&usermanager, self->username, self->email, self->password);
             if (reg != 0) {
                 self->message.type = MessageType_Error;
@@ -143,6 +160,34 @@ int SignupScreenHandleInput(void *selfv, int input) {
                 // fprintf(stderr, "registering %d %d\n", reg, flush);
             }
         }
+    }
+
+    if (out == 4) {
+        char numbers[] = "0123456789";
+        char letters[] = "abcdefghijklmnoqprstuvwyzx";
+        char capital_letters[] = "ABCDEFGHIJKLMNOQPRSTUYWVZX";
+        char symbols[] = "!@#$^&*?";
+    
+        int len = 15 + randn(5);
+        for (int i = 0; i < len; i++) {
+            switch (randn(4)) {
+            case 0:
+                self->password[i] = numbers[randn(10)];
+                break;
+            case 1:
+                self->password[i] = symbols[randn(8)];
+                break;
+            case 2:
+                self->password[i] = capital_letters[randn(26)];
+                break;
+            case 3:
+                self->password[i] = letters[randn(26)];
+                break;
+            } 
+        }
+
+        self->password[len] = '\0';
+        self->form.fields[2].textbox.is_password = false;
     }
 
     return -1;

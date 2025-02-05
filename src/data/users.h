@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define USERS_FILE "users.data"
 
@@ -31,3 +32,5 @@ int UserManagerFree(UserManager *userman);
 int UserManagerFlush(UserManager *userman);
 int UserManagerRegister(UserManager *userman, char *username, char *email, char *password);
 User *UserManagerLogin(UserManager *userman, char *username, char *password);
+
+bool IsEmailValid(char *email);

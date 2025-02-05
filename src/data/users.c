@@ -22,31 +22,53 @@ User guest = {
 User **LoadUsers(char *filename, int *n_users);
 int WriteUsers(char *filename, User **users, int n_users);
 
-// TODO: is this valid?
+bool IsValidEmailChar(char c) {
+    // return isalnum(c) || c == '.' || c == '_' || c == '-';
+    return isalnum(c) || c == '_' || c == '-';
+}
+
 bool IsEmailValid(char *email) {
     //         abc@xyz.com
-    // region: 000 111 222
+    // region: 000 1111111
 
-    // TODO:
+    int len = strlen(email);
+    // Explicitly check that the last char is not '.'
+    if (email[len - 1] == '.')
+        return false;
+
     int region = 0;
-    for (; *email; email++) {
-        // printf("'%c', %d\n", *email, region);
-        if (!isalnum(*email) && *email != '_' && !(region == 0 && *email == '.')) {
-            char expecting;
-            if (region == 0) expecting = '@';
-            else /*if (region == 1)*/ expecting = '.';
-            // else return 0;
-            // printf("'%c', %d ex=%c\n", *email, region, expecting);
+    bool has_dot = false;
+    for (int i = 0; i < len; i++) {
+        char c = email[i];
+        
+        if (region == 0) {
+            if (IsValidEmailChar(c) || c == '.')
+                continue;
+            else if (c == '@') {
+                if (i == 0)
+                    return false;
 
-            region++;
-            if (*email != expecting)
+                region++;
+            }
+            else
+                return false;
+        } else if (region == 1) {
+            if (IsValidEmailChar(c))
+                continue;
+            else if (c == '.') {
+                if (email[i - 1] == '@')
+                    return false;
+
+                has_dot = true;
+            }
+            else
                 return false;
         }
     }
 
     // printf("Finally\n");
 
-    return region == 2;
+    return region == 1 && has_dot;
 }
 
 int UserManagerInit(UserManager *userman) {
