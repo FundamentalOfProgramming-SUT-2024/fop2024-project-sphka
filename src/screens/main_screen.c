@@ -4,6 +4,7 @@
 #include <ncurses.h>
 
 #include "../data/users.h"
+#include "../screen.h"
 
 void MainScreenInit(MainScreen *self) {
     self->menu.n_entries = 4;
@@ -20,6 +21,10 @@ int MainScreenHandleInput(void *selfv, int input) {
 
     if (input == KEY_RESIZE)
         clear();
+
+    if (input == KEY_F(1)) {
+        return MAGIC_EXIT;
+    }
 
     if (input == '\n') {
         switch (self->menu.selected)
@@ -45,6 +50,13 @@ void MainScreenRender(void *selfv) {
 
     int x, y;
     getmaxyx(stdscr, x, y);
+
+    move(x - 1, 0);
+    printw("Exit: ");
+    attron(A_ITALIC);
+    printw("<F1>   ");
+    attroff(A_ITALIC);
+
     mvprintw(x / 2 - 2, y / 2 - 8, "Welcome to ROGUE!");
 
     self->menu.x = x / 2;

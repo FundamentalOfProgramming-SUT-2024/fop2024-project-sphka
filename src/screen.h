@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAGIC_EXIT (-42)
+
 typedef struct {
     void (*Switch) (void *);
     int (*HandleInput) (void *, int);

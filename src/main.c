@@ -13,12 +13,15 @@
 #include "screen.h"
 
 #include "data/users.h"
+#include "music.h"
 
 int main() {
     if (UserManagerInit(&usermanager) < 0) {
         fprintf(stderr, "Failed to init usermanager.");
         return 1;
     }
+
+    InitMusic();
 
     // if (UserManagerRegister(&um, "superscott", "aqaye_faaliyat@gmail.com", "sina") < 0) {
     //     fprintf(stderr, "Failed to register user.");
@@ -133,8 +136,13 @@ int main() {
             ScreenSwitch(current_screen);
             clear();
         }
+
+        if (ret == MAGIC_EXIT) {
+            break;
+        }
     }
     
     endwin();
+    ShutdownMusic();
     return 0;
 }

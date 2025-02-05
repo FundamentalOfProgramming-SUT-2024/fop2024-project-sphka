@@ -83,7 +83,7 @@ void ScoreboardScreenRender(void *selfv) {
         char buffer[100];
         sprintf(buffer, "%dth - %s - Score sum: %d - Gold sum: %d - %d game played - Exp: %llus",
             idx + 1, u->username, u->score_sum, u->gold_sum,
-            u->game_count, time(NULL) - u->first_game_time);
+            u->game_count, u->first_game_time ? time(NULL) - u->first_game_time : 0);
 
         int len = strlen(buffer) + (idx < 3 ? 2 : 0);
 
