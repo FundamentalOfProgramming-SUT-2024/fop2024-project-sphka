@@ -29,24 +29,26 @@ void InitPlayer(Player *player, Coord coord) {
     player->prev_coord = coord;
 
     // Give the player a starting weapon
-    game.player.n_weapons = 1;
-    game.player.weapons[0].category = ItemCategory_Weapon;
+    player->n_weapons = 1;
+    player->weapons[0].category = ItemCategory_Weapon;
     WeaponType *w_type = &weapons[WeaponType_Mace];
-    game.player.weapons[0].info = &w_type->item_info;
-    game.player.weapons[0].ex_weapon.type = w_type;
-    game.player.weapons[0].count = w_type->collect_count;
-    game.player.equipment = 0;
+    player->weapons[0].info = &w_type->item_info;
+    player->weapons[0].ex_weapon.type = w_type;
+    player->weapons[0].count = w_type->collect_count;
+    player->equipment = 0;
 
-    game.player.normal_food  = 0;
-    game.player.supreme_food = 0;
-    game.player.magical_food = 0;
-    game.player.rotten_food  = 0;
+    player->normal_food  = 0;
+    player->supreme_food = 0;
+    player->magical_food = 0;
+    player->rotten_food  = 0;
 
-    game.player.gold = 0;
-    game.player.kills = 0;
+    player->gold = 0;
+    player->kills = 0;
 
-    game.player.health = MAX_HEALTH;
-    game.player.hunger = MAX_HUNGER;
+    player->health = MAX_HEALTH;
+    player->hunger = MAX_HUNGER;
+
+    player->enchant_room_counter = 0;
 }
 
 void NewGame() {
@@ -329,13 +331,37 @@ static void PickupTile(Tile *tile) {
     tile->has_item = tile->has_item && !Pickup(&tile->item);
 }
 
+void CheckEnchantDamage() {
+    Room *room = &CURRENT_FLOOR.rooms[GetCoordRoom(&CURRENT_FLOOR, game.player.coord)];
+    if (room->theme == RoomTheme_Enchant) {
+        game.player.enchant_room_counter++;
+    } else {
+        game.player.enchant_room_counter = 0;
+    }
+
+    if (game.player.enchant_room_counter >= 10) {
+        game.player.enchant_room_counter = 10;
+
+        game.player.health--;
+        strcpy(g_message_bar, "You are being damaged because of staying too long in an enchantment room!");
+
+        if (game.player.health <= 0) {
+            game.killer = (Enemy *)1;
+            EndGame(false);
+        }
+    }
+}
+
 void UpdatePlayer(int input) {
     bool bro_moved = Move(input);
     Tile *tile = &CURRENT_FLOOR.TILEC(game.player.coord);
 
-    if (bro_moved)
+    if (bro_moved) {
         // Pickup item
         PickupTile(tile);
+
+        CheckEnchantDamage();
+    }
 
     if (tile->c == '<' && input == '<' && game.floor_id < FLOOR_COUNT - 1) {
         bro_moved = true;
@@ -535,8 +561,7 @@ bool FastMove() {
 char g_message_bar[500] = "";
 
 void UpdateMessageBar(bool refresh) {
-    int x, y;
-    getmaxyx(stdscr, x, y);
+    int y = getmaxx(stdscr);
 
     for (int i = 0; i < y; i++)
         mvaddch(0, i, ' ');

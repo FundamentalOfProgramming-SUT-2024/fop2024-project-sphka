@@ -45,7 +45,11 @@ uint32_t GetTileSprite(Tile *tile) {
                 c = tile->hidden_door_axis ? '|' : '-';
             else
                 c = tile->c;
-            return c | GetTileCharFlags(c);
+
+            if (tile->in_enchant_room)
+                return c | COLOR_PAIR(6);
+            else
+                return c | GetTileCharFlags(c);
         }
     } else {
         return ' ';
@@ -95,6 +99,9 @@ void GenerateTreasureRoom(Floor *floor) {
             floor->TILE(x, y).is_visible = false;
             // floor->TILE(x, y).dfs_depth = 10;
             floor->TILE(x, y).has_item = false;
+            floor->TILE(x, y).hidden_door_axis = 0;
+            floor->TILE(x, y).hidden_door_discovered = 0;
+            floor->TILE(x, y).in_enchant_room = 0;
         }
 
     floor->n_enemies = 0;
@@ -182,16 +189,46 @@ void GenerateFloor(Floor *floor, Floor *prev) {
             floor->TILE(x, y).is_visible = false;
             // floor->TILE(x, y).dfs_depth = 10;
             floor->TILE(x, y).has_item = false;
+            floor->TILE(x, y).hidden_door_axis = 0;
+            floor->TILE(x, y).hidden_door_discovered = 0;
+            floor->TILE(x, y).in_enchant_room = 0;
         }
 
     DoRooms(floor, prev);
     DoCorridors(floor);
+    DoHiddenDoor(floor);
+
+    // Put stairs
+    int up_stairs_room = prev ? GetCoordRoom(prev, prev->down_stairs) : -1;
+    Coord down_stairs;
+    int room_idx;
+    do {
+        down_stairs = GetRandomCoord(floor);
+
+        room_idx = GetCoordRoom(floor, down_stairs);
+    } while (room_idx == up_stairs_room || floor->rooms[room_idx].theme != RoomTheme_Normal);
+
+    int floor_index = floor - game.floors;
+
+    floor->down_stairs = down_stairs;
+    floor->TILEC(down_stairs).c = (floor_index != (FLOOR_COUNT - 1)) ? '<' : 'T';
+
+    if (prev)
+        floor->TILEC(prev->down_stairs).c = '>';
+
     DoItems(floor);
 
     floor->n_enemies = 10;
 
-    for (int i = 0; i < 10; i++) {
-        floor->enemies[i].coord = GetRandomCoord(floor);
+    int enemies_left = 10;
+    int i = 0;
+    while (enemies_left) {
+        Coord coord = GetRandomCoord(floor);
+        floor->enemies[i].coord = coord;
+
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.' || floor->rooms[GetCoordRoom(floor, coord)].theme != RoomTheme_Normal)
+            continue;
+
         EnemyType *type = &enemies[randn(EnemyTypeCount)];
         floor->enemies[i].type = type;
         floor->enemies[i].health = type->health;
@@ -199,27 +236,84 @@ void GenerateFloor(Floor *floor, Floor *prev) {
         int movement_limit = type->movement_limit;
         floor->enemies[i].movement_left = movement_limit ? movement_limit : -1;
         floor->enemies[i].active = false;
-    }
 
-    DoHiddenDoor(floor);
+        enemies_left--;
+        i++;
+    }
+}
+
+void DoEnchantRoom(Floor *floor, Room *room) {
+    for (int x = room->p0.x; x < room->p1.x; x++)
+        for (int y = room->p0.y; y < room->p1.y; y++) {
+            floor->TILE(x, y).in_enchant_room = 1;
+        }
+
+    int area = (room->p1.x - room->p0.x - 2) * (room->p1.y - room->p0.y - 2);
+    int potions_left = area * 2 / 3;
+
+    while (potions_left) {
+        Coord coord = GetRandomCoordInRoom(room);
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+            continue;
+
+        floor->TILEC(coord).has_item = true;
+        floor->TILEC(coord).item.category = ItemCategory_Potion;
+        PotionType potion_type = potions_left % PotionTypeCount;
+        floor->TILEC(coord).item.info = &potions[potion_type];
+        floor->TILEC(coord).item.ex_potion.type = potion_type;
+        floor->TILEC(coord).item.count = 1;
+
+        potions_left--;
+    }
 }
 
 void DoHiddenDoor(Floor *floor) {
-    bool found_door = false;
-    struct Door door;
+    int possible_enchant_rooms[9];
+    int n_possible_enchant_rooms = 0;
 
-    while (!found_door) {
-        Room *room = PickExistingRoom(floor);
-        if (room->n_doors == 0)
-            continue;
-
-        found_door = true;
-        door = room->doors[randn(room->n_doors)];
+    for (int i = 0; i < 9; i++) {
+        if (floor->rooms[i].n_doors == 1)
+            possible_enchant_rooms[n_possible_enchant_rooms++] = i;
     }
 
-    floor->TILEC(door.coord).c = '%';
-    floor->TILEC(door.coord).hidden_door_axis = door.axis;
-    floor->TILEC(door.coord).hidden_door_discovered = 0;
+    if (n_possible_enchant_rooms == 0) {
+        bool found_door = false;
+        struct Door door;
+        Room *room;
+
+        while (!found_door) {
+            room = PickExistingRoom(floor);
+            if (room->n_doors == 0)
+                continue;
+
+            found_door = true;
+            door = room->doors[randn(room->n_doors)];
+        }
+
+        floor->TILEC(door.coord).c = '%';
+        floor->TILEC(door.coord).hidden_door_axis = door.axis;
+        floor->TILEC(door.coord).hidden_door_discovered = 0;
+    } else {
+        Room *enchant_room = &floor->rooms[possible_enchant_rooms[randn(n_possible_enchant_rooms)]];
+        Room *enchant_entry = &floor->rooms[enchant_room->doors[0].other_end];
+
+        if (enchant_room->is_gone || enchant_entry->is_gone)
+            return;
+
+        struct Door door;
+        for (int i = 0; i < enchant_entry->n_doors; i++)
+            if (enchant_entry->doors[i].other_end == (enchant_room - floor->rooms)) {
+                door = enchant_entry->doors[i];
+                break;
+            }
+
+        floor->TILEC(door.coord).c = '%';
+        floor->TILEC(door.coord).hidden_door_axis = door.axis;
+        floor->TILEC(door.coord).hidden_door_discovered = 0;
+
+        enchant_room->theme = RoomTheme_Enchant;
+        DoEnchantRoom(floor, enchant_room);
+    }
 }
 
 void DoRooms(Floor *floor, Floor *prev) {
@@ -236,6 +330,7 @@ void DoRooms(Floor *floor, Floor *prev) {
         for (int j = 0; j < 3; j++) {
             int idx = i * 3 + j;
             Room *room = &floor->rooms[idx];
+            room->theme = RoomTheme_Normal;
 
             if (idx == up_stairs_room) {
                 *room = prev->rooms[idx];
@@ -284,21 +379,6 @@ void DoRooms(Floor *floor, Floor *prev) {
                     floor->TILE(x, y).c = c;
                 }
         }
-
-    // Put stairs
-
-    Coord down_stairs;
-    do {
-        down_stairs = GetRandomCoord(floor);
-    } while (GetCoordRoom(floor, down_stairs) == up_stairs_room);
-
-    int floor_index = floor - game.floors;
-
-    floor->down_stairs = down_stairs;
-    floor->TILEC(down_stairs).c = (floor_index != (FLOOR_COUNT - 1)) ? '<' : 'T';
-
-    if (prev)
-        floor->TILEC(prev->down_stairs).c = '>';
 }
 
 struct RoomLUT {
@@ -386,6 +466,7 @@ void ConnectRooms(Floor *floor, int i, int j) {
             door_min.x = randn(rmin->p1.x - rmin->p0.x - 2) + rmin->p0.x + 1;
             rmin->doors[rmin->n_doors].coord = door_min;
             rmin->doors[rmin->n_doors].axis = 1;
+            rmin->doors[rmin->n_doors].other_end = imax;
             rmin->n_doors++;
             floor->TILEC(door_min).c = '+';
         } else {
@@ -398,6 +479,7 @@ void ConnectRooms(Floor *floor, int i, int j) {
             door_max.x = randn(rmax->p1.x - rmax->p0.x - 2) + rmax->p0.x + 1;
             rmax->doors[rmax->n_doors].coord = door_max;
             rmax->doors[rmax->n_doors].axis = 1;
+            rmax->doors[rmax->n_doors].other_end = imin;
             rmax->n_doors++;
             floor->TILEC(door_max).c = '+';
         } else {
@@ -416,6 +498,7 @@ void ConnectRooms(Floor *floor, int i, int j) {
             door_min.y = randn(rmin->p1.y - rmin->p0.y - 2) + rmin->p0.y + 1;
             rmin->doors[rmin->n_doors].coord = door_min;
             rmin->doors[rmin->n_doors].axis = 0;
+            rmin->doors[rmin->n_doors].other_end = imax;
             rmin->n_doors++;
             floor->TILEC(door_min).c = '+';
         } else {
@@ -428,6 +511,7 @@ void ConnectRooms(Floor *floor, int i, int j) {
             door_max.y = randn(rmax->p1.y - rmax->p0.y - 2) + rmax->p0.y + 1;
             rmax->doors[rmax->n_doors].coord = door_max;
             rmax->doors[rmax->n_doors].axis = 0;
+            rmax->doors[rmax->n_doors].other_end = imin;
             rmax->n_doors++;
             floor->TILEC(door_max).c = '+';
         } else {
@@ -490,7 +574,7 @@ void DoItems(Floor *floor) {
     int items_left = 10;
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
-        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.' || floor->rooms[GetCoordRoom(floor, coord)].theme != RoomTheme_Normal)
             continue;
 
         floor->TILEC(coord).has_item = true;
@@ -505,7 +589,7 @@ void DoItems(Floor *floor) {
     items_left = randn(3);
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
-        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.' || floor->rooms[GetCoordRoom(floor, coord)].theme != RoomTheme_Normal)
             continue;
 
         floor->TILEC(coord).has_item = true;
@@ -520,7 +604,7 @@ void DoItems(Floor *floor) {
     items_left = 10 + randn(5);
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
-        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.' || floor->rooms[GetCoordRoom(floor, coord)].theme != RoomTheme_Normal)
             continue;
 
         floor->TILEC(coord).has_item = true;
@@ -548,7 +632,7 @@ void DoItems(Floor *floor) {
     items_left = 5;
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
-        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.' || floor->rooms[GetCoordRoom(floor, coord)].theme != RoomTheme_Normal)
             continue;
 
         floor->TILEC(coord).has_item = true;
@@ -565,7 +649,7 @@ void DoItems(Floor *floor) {
     items_left = 10;
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
-        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.' || floor->rooms[GetCoordRoom(floor, coord)].theme != RoomTheme_Normal)
             continue;
 
         floor->TILEC(coord).has_item = true;
@@ -624,7 +708,7 @@ void Discover(Floor *floor, Coord coord) {
     }
     
     Tile *tile = &floor->TILEC(coord);
-    if (room_id == -1 || tile->c == '+') {
+    if (room_id == -1 || tile->c == '+' || tile->c == '%') {
         // Player is on a corridor tile
         // DiscoverCorridor(floor, coord, 0, 3);
         DiscoverCorridor(floor, coord, 5);

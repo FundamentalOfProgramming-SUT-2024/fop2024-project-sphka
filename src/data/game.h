@@ -51,6 +51,8 @@ typedef struct Player {
 
     int health;
     int hunger;
+
+    int enchant_room_counter;
     uint8_t anchor;
 } Player;
 

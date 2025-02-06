@@ -14,7 +14,7 @@ void SettingsScreenInit(SettingsScreen *self) {
 }
 
 void SettingsScreenHandleSwitch(void *selfv) {
-    SettingsScreen *self = (SettingsScreen *)selfv;
+    // SettingsScreen *self = (SettingsScreen *)selfv;
 }
 
 int SettingsScreenHandleInput(void *selfv, int input) {

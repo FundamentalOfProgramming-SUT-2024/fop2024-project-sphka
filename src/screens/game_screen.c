@@ -15,7 +15,7 @@ void GameScreenInit(GameScreen *self) {
 }
 
 int GameScreenHandleInput(void *selfv, int input) {
-    GameScreen *self = (GameScreen *)selfv;
+    // GameScreen *self = (GameScreen *)selfv;
 
     if (input == KEY_F(1)) {
         char filename[100];
@@ -201,6 +201,10 @@ void RenderRIP(int x, int y) {
 
     if (game.killer == 0)
         TrimString("p. of Rotten Food", buffer);
+    else if (game.killer == (Enemy *)1) {
+        mvwaddch(win, 11, 33, ' ');
+        TrimString("ENCHANTMENT", buffer);
+    }
     else if (game.killer == (Enemy *)2) {
         mvwaddch(win, 11, 33, ' ');
         TrimString("HUNGER", buffer);
@@ -216,7 +220,7 @@ void RenderRIP(int x, int y) {
 }
 
 void GameScreenRender(void *selfv) {
-    GameScreen *self = (GameScreen *)selfv;
+    // GameScreen *self = (GameScreen *)selfv;
 
     int x, y;
     getmaxyx(stdscr, x, y);

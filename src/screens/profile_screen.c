@@ -13,7 +13,7 @@ void ProfileScreenInit(ProfileScreen *self) {
 }
 
 void ProfileScreenHandleSwitch(void *selfv) {
-    ProfileScreen *self = (ProfileScreen *)selfv;
+    // ProfileScreen *self = (ProfileScreen *)selfv;
 }
 
 int ProfileScreenHandleInput(void *selfv, int input) {
@@ -25,7 +25,7 @@ int ProfileScreenHandleInput(void *selfv, int input) {
         return 3;
     }
 
-    ProfileScreen *self = (ProfileScreen *)selfv;
+    // ProfileScreen *self = (ProfileScreen *)selfv;
 
     return -1;
 }
@@ -38,7 +38,7 @@ static void PrintCentered(int x, const char *str) {
 }
 
 void ProfileScreenRender(void *selfv) {
-    ProfileScreen *self = (ProfileScreen *)selfv;
+    // ProfileScreen *self = (ProfileScreen *)selfv;
 
     int x, y;
     getmaxyx(stdscr, x, y);
