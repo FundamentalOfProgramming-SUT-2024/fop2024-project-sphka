@@ -11,6 +11,7 @@
 #include "screens/pregame_screen.h"
 #include "screens/scoreboard_screen.h"
 #include "screens/settings_screen.h"
+#include "screens/profile_screen.h"
 #include "screen.h"
 
 #include "data/users.h"
@@ -133,6 +134,15 @@ int main() {
         .data = &sts
     };
 
+
+    Screen profile_screen = {
+        .Switch = ProfileScreenHandleSwitch,
+        .HandleInput = ProfileScreenHandleInput,
+        .Render = ProfileScreenRender,
+        .Free = ProfileScreenFree,
+        .data = &sts
+    };
+
     Screen *current_screen = &main_screen;
     Screen *screens[] = {
         &main_screen,
@@ -141,7 +151,8 @@ int main() {
         &pregame_screen,
         &game_screen,
         &scoreboard_screen,
-        &settings_screen
+        &settings_screen,
+        &profile_screen
     };
 
     while (1) {

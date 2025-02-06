@@ -20,7 +20,6 @@ int comp(const void *a_ptr, const void *b_ptr) {
     return 0;
 }
 
-
 void ScoreboardScreenInit(ScoreboardScreen *self) {
     self->page = 0;
     self->users = NULL;

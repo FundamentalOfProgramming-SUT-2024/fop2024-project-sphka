@@ -25,6 +25,8 @@ typedef struct {
     struct {
         uint8_t is_visible : 1;
         uint8_t has_item : 1;
+        uint8_t hidden_door_axis : 1;
+        uint8_t hidden_door_discovered : 1;
     };
 
     Item item;
@@ -39,7 +41,10 @@ typedef struct {
     bool is_gone;
 
     int n_doors;
-    Coord doors[4];
+    struct Door {
+        Coord coord;
+        uint8_t axis;
+    } doors[4];
 } Room;
 
 #define MAXLINES 32

@@ -10,13 +10,14 @@
 void DeserializeGame(FILE *file, Game *game);
 
 void PregameScreenInit(PregameScreen *self) {
-    self->menu.n_entries = 5;
+    self->menu.n_entries = 6;
     self->menu.entries = malloc(self->menu.n_entries * sizeof(char *));
     self->menu.entries[0] = "   New  Game   ";
     // self->menu.entries[1] = "   Load Game   ";
     self->menu.entries[2] = "   Scoreboard  ";
-    self->menu.entries[3] = "    Settings   ";
-    self->menu.entries[4] = "     Logout    ";
+    self->menu.entries[3] = "    Profile    ";
+    self->menu.entries[4] = "    Settings   ";
+    self->menu.entries[5] = "     Logout    ";
     self->menu.selected = 0;
 }
 
@@ -56,8 +57,10 @@ int PregameScreenHandleInput(void *selfv, int input) {
         case 2:
             return 5;
         case 3:
-            return 6;
+            return 7;
         case 4:
+            return 6;
+        case 5:
             logged_in_user = NULL;
             return 0;
         default:

@@ -14,13 +14,14 @@ void DoRooms(Floor *floor, Floor *prev);
 void DoCorridors(Floor *floor);
 void ConnectRooms(Floor *floor, int i, int j);
 void DoItems(Floor *floor);
+void DoHiddenDoor(Floor *floor);
 
 static inline uint32_t GetTileCharFlags(char c) {
     int flags = 0;
     switch (c)
     {
     case '#': flags = COLOR_PAIR(1); break;
-    case '+': case '-': case '|':
+    case '+': case '-': case '|': case '%':
         flags = COLOR_PAIR(game.floor_id == FLOOR_COUNT ? 5 : 2); break;
     case '<': case '>':
         flags = COLOR_PAIR(4) | A_REVERSE; break;
@@ -38,15 +39,21 @@ uint32_t GetTileSprite(Tile *tile) {
     if (tile->is_visible || game.map_revealed) {
         if (tile->has_item)
             return tile->item.info->sprite;
-        else
-            return tile->c | GetTileCharFlags(tile->c);
+        else {
+            char c;
+            if (!game.map_revealed && tile->c == '%' && !tile->hidden_door_discovered)
+                c = tile->hidden_door_axis ? '|' : '-';
+            else
+                c = tile->c;
+            return c | GetTileCharFlags(c);
+        }
     } else {
         return ' ';
     }
 }
 
 bool IsTilePassable(Coord coord, Enemy **enemy_out) {
-    if (strchr(".+#<>T", CURRENT_FLOOR.TILEC(coord).c) == NULL)
+    if (strchr(".+#<>T%", CURRENT_FLOOR.TILEC(coord).c) == NULL)
         return false;
 
     if (game.player.coord.x == coord.x && game.player.coord.y == coord.y)
@@ -193,6 +200,26 @@ void GenerateFloor(Floor *floor, Floor *prev) {
         floor->enemies[i].movement_left = movement_limit ? movement_limit : -1;
         floor->enemies[i].active = false;
     }
+
+    DoHiddenDoor(floor);
+}
+
+void DoHiddenDoor(Floor *floor) {
+    bool found_door = false;
+    struct Door door;
+
+    while (!found_door) {
+        Room *room = PickExistingRoom(floor);
+        if (room->n_doors == 0)
+            continue;
+
+        found_door = true;
+        door = room->doors[randn(room->n_doors)];
+    }
+
+    floor->TILEC(door.coord).c = '%';
+    floor->TILEC(door.coord).hidden_door_axis = door.axis;
+    floor->TILEC(door.coord).hidden_door_discovered = 0;
 }
 
 void DoRooms(Floor *floor, Floor *prev) {
@@ -357,7 +384,9 @@ void ConnectRooms(Floor *floor, int i, int j) {
         if (!rmin->is_gone) {
             door_min.y = rmin->p1.y - 1;
             door_min.x = randn(rmin->p1.x - rmin->p0.x - 2) + rmin->p0.x + 1;
-            rmin->doors[rmin->n_doors++] = door_min;
+            rmin->doors[rmin->n_doors].coord = door_min;
+            rmin->doors[rmin->n_doors].axis = 1;
+            rmin->n_doors++;
             floor->TILEC(door_min).c = '+';
         } else {
             door_min = rmin->p0;
@@ -367,7 +396,9 @@ void ConnectRooms(Floor *floor, int i, int j) {
         if (!rmax->is_gone) {
             door_max.y = rmax->p0.y;
             door_max.x = randn(rmax->p1.x - rmax->p0.x - 2) + rmax->p0.x + 1;
-            rmax->doors[rmax->n_doors++] = door_max;
+            rmax->doors[rmax->n_doors].coord = door_max;
+            rmax->doors[rmax->n_doors].axis = 1;
+            rmax->n_doors++;
             floor->TILEC(door_max).c = '+';
         } else {
             door_max = rmax->p0;
@@ -383,7 +414,9 @@ void ConnectRooms(Floor *floor, int i, int j) {
         if (!rmin->is_gone) {
             door_min.x = rmin->p1.x - 1;
             door_min.y = randn(rmin->p1.y - rmin->p0.y - 2) + rmin->p0.y + 1;
-            rmin->doors[rmin->n_doors++] = door_min;
+            rmin->doors[rmin->n_doors].coord = door_min;
+            rmin->doors[rmin->n_doors].axis = 0;
+            rmin->n_doors++;
             floor->TILEC(door_min).c = '+';
         } else {
             door_min = rmin->p0;
@@ -393,7 +426,9 @@ void ConnectRooms(Floor *floor, int i, int j) {
         if (!rmax->is_gone) {
             door_max.x = rmax->p0.x;
             door_max.y = randn(rmax->p1.y - rmax->p0.y - 2) + rmax->p0.y + 1;
-            rmax->doors[rmax->n_doors++] = door_max;
+            rmax->doors[rmax->n_doors].coord = door_max;
+            rmax->doors[rmax->n_doors].axis = 0;
+            rmax->n_doors++;
             floor->TILEC(door_max).c = '+';
         } else {
             door_max = rmax->p0;
@@ -588,11 +623,15 @@ void Discover(Floor *floor, Coord coord) {
                 floor->TILE(x, y).is_visible = true;
     }
     
-    if (room_id == -1 || floor->TILEC(coord).c == '+') {
+    Tile *tile = &floor->TILEC(coord);
+    if (room_id == -1 || tile->c == '+') {
         // Player is on a corridor tile
         // DiscoverCorridor(floor, coord, 0, 3);
         DiscoverCorridor(floor, coord, 5);
     }
+
+    if (tile->c == '%')
+        tile->hidden_door_discovered = 1;
 }
 
 bool CanSeeCross(Coord a, Coord b) {
