@@ -5,11 +5,24 @@
 
 #include "input.h"
 #include "item.h"
+#include "../settings.h"
+#include "../data/users.h"
 #include "dialogs/weapon_selector.h"
 #include "dialogs/food_selector.h"
 #include "dialogs/potion_selector.h"
 
 Game game;
+
+static void EndGame(bool won) {
+    game.over = true;
+    logged_in_user->has_save = false;
+
+    if (!won)
+        game.player.health = 0;
+    game.won = won;
+
+    UserManagerFlush(&usermanager);
+}
 
 void InitPlayer(Player *player, Coord coord) {
     player->coord = coord;
@@ -39,13 +52,17 @@ void InitPlayer(Player *player, Coord coord) {
 void NewGame() {
     game.floor_id = 0;
     game.map_revealed = false;
+    game.difficulty = g_settings.difficulty;
     game.over = false;
+    game.won = false;
     game.killer = NULL;
     game.skip_next_pickup = false;
     game.clock = 0;
 
     for (int i = 0; i < FLOOR_COUNT; i++)
         GenerateFloor(&game.floors[i], i ? &game.floors[i - 1] : NULL);
+
+    GenerateTreasureRoom(&game.floors[FLOOR_COUNT]);
 
     InitPlayer(&game.player, GetRandomCoord(&CURRENT_FLOOR));
     Discover(&CURRENT_FLOOR, game.player.coord);
@@ -129,6 +146,18 @@ bool Pickup(Item *item) {
     }
 
     return false;
+}
+
+void CheckWin() {
+    if (game.floor_id != FLOOR_COUNT)
+        return;
+
+    for (int i = 0; i < CURRENT_FLOOR.n_enemies; i++) {
+        if (CURRENT_FLOOR.enemies[i].health > 0)
+            return;
+    }
+
+    EndGame(true);
 }
 
 void ConsumeWeapon() {
@@ -278,6 +307,7 @@ void Attack() {
         MeleeAttack(&attackee, &attackees, &dead_enemies);
 
     game.player.kills += dead_enemies;
+    CheckWin();
 
     if (attackees == 0)
         strcpy(g_message_bar, "You miss!");
@@ -313,6 +343,11 @@ void UpdatePlayer(int input) {
     } else if (tile->c == '>' && input == '>' && game.floor_id) {
         bro_moved = true;
         game.floor_id--;
+    } else if (tile->c == 'T' && input == '<' && game.floor_id == FLOOR_COUNT - 1) {
+        bro_moved = true;
+        game.floor_id++;
+        game.player.coord.x = MAXLINES / 2;
+        game.player.coord.y = MAXCOLS / 2;
     }
 
     if (bro_moved)
@@ -335,22 +370,47 @@ void UpdatePlayer(int input) {
         Attack();
 
     bool double_speed = game.player.buffs[PotionType_Speed] > 0;
-    if ((double_speed ? EVERY(4): EVERY(2)) && game.player.hunger > 30) {
-        int heal = (game.player.hunger - 30) / 2;
-        game.player.health += heal * (game.player.buffs[PotionType_Health] ? 2 : 1);
+    if ((double_speed ? EVERY(4): EVERY(2))) {
+        if (game.player.hunger > 30) {
+            int heal = (game.player.hunger - 30) / 2;
+            game.player.health += heal * (game.player.buffs[PotionType_Health] ? 2 : 1);
 
-        if (game.player.health > MAX_HEALTH) {
-            game.player.health = MAX_HEALTH;
+            if (game.player.health > MAX_HEALTH) {
+                game.player.health = MAX_HEALTH;
+            }
+        } else if (game.player.hunger < 12) {
+            game.player.health -= randn(2) + 1;
+            strcpy(g_message_bar, "You are being damaged because of hunger!");
+
+            if (game.player.health <= 0) {
+                game.killer = (Enemy *)2;
+                EndGame(false);
+            }
         }
     }
 
-    if (double_speed ? EVERY(10): EVERY(5)) {
+    #define EVERY_RESPECT_SPEED(n) (double_speed ? EVERY(2 * n): EVERY(n))
+
+    int hunger_reduction_period;
+    switch (game.difficulty) {
+    case 0:
+        hunger_reduction_period = 5;
+        break;
+
+    case 1:
+    case 2:
+    default:
+        hunger_reduction_period = 3;
+        break;
+    }
+
+    if (EVERY_RESPECT_SPEED(hunger_reduction_period)) {
         game.player.hunger--;
         if (game.player.hunger < 0)
             game.player.hunger = 0;
     }
 
-    if (double_speed ? EVERY(20): EVERY(10)) {
+    if (EVERY_RESPECT_SPEED(10)) {
         // Degrade foods
         if (game.player.magical_food) {
             game.player.magical_food--;
@@ -377,11 +437,10 @@ void UpdateEnemies() {
 }
 
 void Damage(Enemy *enemy) {
-    game.player.health -= enemy->type->damage;
+    game.player.health -= enemy->type->damage * (game.difficulty == 2 ? 2 : 1);
     if (game.player.health <= 0) {
-        game.player.health = 0;
-        game.over = true;
         game.killer = enemy;
+        EndGame(false);
     }
 }
 
@@ -420,8 +479,7 @@ void ConsumeFood(FoodType type) {
 
     if (game.player.health <= 0) {
         game.killer = NULL;
-        game.player.health = 0;
-        game.over = true;
+        EndGame(false);
     } else if (game.player.health > MAX_HEALTH) {
         game.player.health = MAX_HEALTH;
     }

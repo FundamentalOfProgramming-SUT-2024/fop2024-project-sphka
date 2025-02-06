@@ -10,6 +10,7 @@
 #include "screens/signup_screen.h"
 #include "screens/pregame_screen.h"
 #include "screens/scoreboard_screen.h"
+#include "screens/settings_screen.h"
 #include "screen.h"
 
 #include "data/users.h"
@@ -73,6 +74,9 @@ int main() {
     ScoreboardScreen sbs;
     ScoreboardScreenInit(&sbs);
 
+    SettingsScreen sts;
+    SettingsScreenInit(&sts);
+
     Screen main_screen = {
         .Switch = NULL,
         .HandleInput = MainScreenHandleInput,
@@ -98,7 +102,7 @@ int main() {
     };
 
     Screen pregame_screen = {
-        .Switch = NULL,
+        .Switch = PregameScreenSwitch,
         .HandleInput = PregameScreenHandleInput,
         .Render = PregameScreenRender,
         .Free = PregameScreenFree,
@@ -121,8 +125,24 @@ int main() {
         .data = &sbs
     };
 
+    Screen settings_screen = {
+        .Switch = SettingsScreenHandleSwitch,
+        .HandleInput = SettingsScreenHandleInput,
+        .Render = SettingsScreenRender,
+        .Free = SettingsScreenFree,
+        .data = &sts
+    };
+
     Screen *current_screen = &main_screen;
-    Screen *screens[] = { &main_screen, &login_screen, &signup_screen, &pregame_screen, &game_screen, &scoreboard_screen };
+    Screen *screens[] = {
+        &main_screen,
+        &login_screen,
+        &signup_screen,
+        &pregame_screen,
+        &game_screen,
+        &scoreboard_screen,
+        &settings_screen
+    };
 
     while (1) {
         ScreenRender(current_screen);

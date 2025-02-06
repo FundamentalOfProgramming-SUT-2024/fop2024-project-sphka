@@ -7,12 +7,32 @@
 #include <ncurses.h>
 
 #include "random.h"
+#include "settings.h"
 #include "data/game.h"
 
 void DoRooms(Floor *floor, Floor *prev);
 void DoCorridors(Floor *floor);
 void ConnectRooms(Floor *floor, int i, int j);
 void DoItems(Floor *floor);
+
+static inline uint32_t GetTileCharFlags(char c) {
+    int flags = 0;
+    switch (c)
+    {
+    case '#': flags = COLOR_PAIR(1); break;
+    case '+': case '-': case '|':
+        flags = COLOR_PAIR(game.floor_id == FLOOR_COUNT ? 5 : 2); break;
+    case '<': case '>':
+        flags = COLOR_PAIR(4) | A_REVERSE; break;
+    case 'O': flags = COLOR_PAIR(3); break;
+    case '=': flags = COLOR_PAIR(3); break;
+    case 'T': flags = COLOR_PAIR(5); break;
+    default:
+        break;
+    }
+
+    return flags;
+}
 
 uint32_t GetTileSprite(Tile *tile) {
     if (tile->is_visible || game.map_revealed) {
@@ -26,7 +46,7 @@ uint32_t GetTileSprite(Tile *tile) {
 }
 
 bool IsTilePassable(Coord coord, Enemy **enemy_out) {
-    if (strchr(".+#<>", CURRENT_FLOOR.TILEC(coord).c) == NULL)
+    if (strchr(".+#<>T", CURRENT_FLOOR.TILEC(coord).c) == NULL)
         return false;
 
     if (game.player.coord.x == coord.x && game.player.coord.y == coord.y)
@@ -59,6 +79,93 @@ Room *PickExistingRoom(Floor *floor) {
     } while (room->is_gone);
 
     return room;
+}
+
+void GenerateTreasureRoom(Floor *floor) {
+    for (int x = 0; x < MAXLINES; x++)
+        for (int y = 0; y < MAXCOLS; y++) {
+            floor->TILE(x, y).c = ' ';
+            floor->TILE(x, y).is_visible = false;
+            // floor->TILE(x, y).dfs_depth = 10;
+            floor->TILE(x, y).has_item = false;
+        }
+
+    floor->n_enemies = 0;
+
+    int x0 = MAXLINES / 5;
+    int x1 = 4 * MAXLINES / 5;
+
+    int y0 = MAXCOLS / 5;
+    int y1 = 4 * MAXCOLS / 5;
+
+    for (int x = x0; x < x1; x++)
+        for (int y = y0; y < y1; y++) {
+            char c = '.';
+            if (y == y0 || y == y1 - 1)
+                c = '|';
+            else if (x == x0 || x == x1 - 1) 
+                c = '-';
+
+            floor->TILE(x, y).c = c;
+        }
+
+    floor->rooms[0].n_doors = 0;
+    floor->rooms[0].is_gone = false;
+    floor->rooms[0].p0.x = x0;
+    floor->rooms[0].p0.y = y0;
+    floor->rooms[0].p1.x = x1;
+    floor->rooms[0].p1.y = y1;
+
+    for (int i = 1; i < 9; i++) {
+        floor->rooms[i].n_doors = 0;
+        floor->rooms[i].is_gone = true;
+        floor->rooms[i].p0.x = x0;
+        floor->rooms[i].p0.y = y0;
+        floor->rooms[i].p1.x = x1;
+        floor->rooms[i].p1.y = y1;
+    }
+
+    // Gold
+    int items_left = 20;
+    while (items_left) {
+        Coord coord = GetRandomCoord(floor);
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+            continue;
+
+        floor->TILEC(coord).has_item = true;
+        floor->TILEC(coord).item.category = ItemCategory_Gold;
+        floor->TILEC(coord).item.info = &gold_item_info;
+        floor->TILEC(coord).item.count = randn(6) + 5;
+
+        items_left--;
+    }
+
+    // Dark gold
+    items_left = 30;
+    while (items_left) {
+        Coord coord = GetRandomCoord(floor);
+        if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
+            continue;
+
+        floor->TILEC(coord).has_item = true;
+        floor->TILEC(coord).item.category = ItemCategory_Gold;
+        floor->TILEC(coord).item.info = &dark_gold_item_info;
+        floor->TILEC(coord).item.count = randn(20) + 50;
+
+        items_left--;
+    }
+
+    floor->n_enemies = 10;
+    for (int i = 0; i < 10; i++) {
+        floor->enemies[i].coord = GetRandomCoord(floor);
+        EnemyType *type = &enemies[randn(EnemyTypeCount)];
+        floor->enemies[i].type = type;
+        floor->enemies[i].health = type->health;
+
+        int movement_limit = type->movement_limit;
+        floor->enemies[i].movement_left = movement_limit ? movement_limit : -1;
+        floor->enemies[i].active = false;
+    }
 }
 
 void GenerateFloor(Floor *floor, Floor *prev) {
@@ -152,9 +259,16 @@ void DoRooms(Floor *floor, Floor *prev) {
         }
 
     // Put stairs
-    Coord down_stairs = GetRandomCoord(floor);
+
+    Coord down_stairs;
+    do {
+        down_stairs = GetRandomCoord(floor);
+    } while (GetCoordRoom(floor, down_stairs) == up_stairs_room);
+
+    int floor_index = floor - game.floors;
+
     floor->down_stairs = down_stairs;
-    floor->TILEC(down_stairs).c = '<';
+    floor->TILEC(down_stairs).c = (floor_index != (FLOOR_COUNT - 1)) ? '<' : 'T';
 
     if (prev)
         floor->TILEC(prev->down_stairs).c = '>';
@@ -368,7 +482,7 @@ void DoItems(Floor *floor) {
     }
 
     // Food
-    items_left = 5 + randn(5);
+    items_left = 10 + randn(5);
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
         if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
@@ -396,7 +510,7 @@ void DoItems(Floor *floor) {
     }
 
     // Potions
-    items_left = 3;
+    items_left = 5;
     while (items_left) {
         Coord coord = GetRandomCoord(floor);
         if (floor->TILEC(coord).has_item || floor->TILEC(coord).c != '.')
@@ -404,7 +518,7 @@ void DoItems(Floor *floor) {
 
         floor->TILEC(coord).has_item = true;
         floor->TILEC(coord).item.category = ItemCategory_Potion;
-        PotionType potion_type = items_left - 1;
+        PotionType potion_type = items_left % PotionTypeCount;
         floor->TILEC(coord).item.info = &potions[potion_type];
         floor->TILEC(coord).item.ex_potion.type = potion_type;
         floor->TILEC(coord).item.count = 1;
@@ -540,7 +654,7 @@ void RenderMap(int x, int y) {
             mvaddch(enemy->coord.x, enemy->coord.y, enemy->type->sprite);
     }
 
-    mvaddch(game.player.coord.x, game.player.coord.y, '@' | COLOR_PAIR(4));
+    mvaddch(game.player.coord.x, game.player.coord.y, '@' | COLOR_PAIR(g_settings.player_color));
 
     attron(COLOR_PAIR(5));
     mvprintw(x - 2, 0, "Gold: ");

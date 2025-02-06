@@ -27,3 +27,11 @@ void ShutdownMusic() {
     Mix_Quit();
     SDL_Quit();
 }
+
+void DisableMusic() {
+    Mix_HaltMusic();
+}
+
+void EnableMusic() {
+    Mix_PlayMusic(music, -1);
+}

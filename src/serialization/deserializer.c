@@ -33,6 +33,11 @@ void DeserializeItem(FILE *file, Item *item) {
         fread_exact(file, sizeof(FoodType), (char *) &item->ex_food.type);
         item->info = &foods[item->ex_food.type];
         break;
+
+    case ItemCategory_Potion:
+        fread_exact(file, sizeof(FoodType), (char *) &item->ex_potion.type);
+        item->info = &potions[item->ex_potion.type];
+        break;
     
     default:
         break;
@@ -82,7 +87,7 @@ void DeserializeGame(FILE *file, Game *game) {
     DeserializePlayer(file, &game->player);
     fread_exact(file, ((char *) game->floors) - ((char *) &game->clock), (char *) &game->clock);
 
-    for (int i = 0; i < FLOOR_COUNT; i++) {
+    for (int i = 0; i < FLOOR_COUNT + 1; i++) {
         DeserializeFloor(file, &game->floors[i]);
     }
 

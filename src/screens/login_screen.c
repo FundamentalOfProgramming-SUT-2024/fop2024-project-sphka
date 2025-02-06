@@ -10,6 +10,7 @@ void LoginScreenInit(LoginScreen *self) {
     self->form.n_fields = 3;
     self->form.focus = 0;
     self->form.render_back_button = true;
+    self->message.type = MessageType_None;
 
     self->username[0] = 0;
     self->form.fields[0].type = FIELD_TYPE_TEXTBOX;
@@ -37,6 +38,7 @@ void LoginScreenHandleSwitch(void *selfv) {
     self->form.focus = 0;
     self->username[0] = 0;
     self->password[0] = 0;
+    self->message.type = MessageType_None;
 
     self->form.fields[0].textbox.cursor = 0;
     self->form.fields[1].textbox.cursor = 0;

@@ -30,24 +30,6 @@ typedef struct {
     Item item;
 } Tile;
 
-static inline uint32_t GetTileCharFlags(char c) {
-    int flags = 0;
-    switch (c)
-    {
-    case '#': flags = COLOR_PAIR(1); break;
-    case '+': case '-': case '|':
-        flags = COLOR_PAIR(2); break;
-    case '<': case '>':
-        flags = COLOR_PAIR(4) | A_REVERSE; break;
-    case 'O': flags = COLOR_PAIR(3); break;
-    case '=': flags = COLOR_PAIR(3); break;
-    default:
-        break;
-    }
-
-    return flags;
-}
-
 uint32_t GetTileSprite(Tile *tile);
 bool IsTilePassable(Coord coord, Enemy **enemy_out);
 
@@ -75,6 +57,7 @@ typedef struct {
 } Floor;
 
 void GenerateFloor(Floor *floor, Floor *prev);
+void GenerateTreasureRoom(Floor *floor);
 int GetCoordRoom(Floor *floor, Coord coord);
 Coord GetRandomCoordInRoom(Room *room);
 Coord GetRandomCoord(Floor *floor);

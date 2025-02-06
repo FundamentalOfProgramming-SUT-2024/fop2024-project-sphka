@@ -25,6 +25,8 @@ int GameScreenHandleInput(void *selfv, int input) {
         fflush(file);
         fclose(file);
 
+        logged_in_user->has_save = true;
+
         if (logged_in_user->first_game_time == 0)
             logged_in_user->first_game_time = time(NULL);
 
@@ -57,6 +59,9 @@ int GameScreenHandleInput(void *selfv, int input) {
     if (game.over) {
         if (input == ' ') {
             int score = game.player.gold * 2 + game.player.kills * 5;
+            if (game.won)
+                score += 1000;
+
             logged_in_user->score_sum += score;
             logged_in_user->gold_sum += game.player.gold;
             logged_in_user->game_count++;
@@ -104,6 +109,27 @@ static char *rip[] = {"                       __________",
                       "                 Press space to continue",
                       0};
 
+
+static char *trophy[] = {
+    "                        ___________",
+    "                       '._==_==_=_.'",
+    "                       .-\\:      /-.",
+    "                      | (|:.     |) |",
+    "                       '-|:.     |-'",
+    "                         \\::.    /",
+    "                          '::. .'",
+    "                            ) (",
+    "                          _.' '._",
+    "                         `\"\"\"\"\"\"\"`",
+    "",
+    "",
+    "                         YOU  WON!",
+    "",
+    "                  Press space to continue",
+    0
+};
+
+
 void TrimString(const char *in, char *out) {
     strcpy(out, in);
 
@@ -113,6 +139,30 @@ void TrimString(const char *in, char *out) {
         out[15] = '.';
         out[16] = 0;
     }
+}
+
+void RenderYouWon(int x, int y) {
+    static WINDOW *win = NULL;
+
+    // if (!win)
+    if (win)
+        delwin(win);
+
+    win = newwin(22, 60, (x - 22) / 2, (y - 60) / 2);
+
+    box(win, 0, 0);
+
+    int i = 0;
+    wattron(win, COLOR_PAIR(5));
+    for (char **trophy_ptr = trophy; *trophy_ptr; trophy_ptr++) {
+        if (i == 14)
+            wattroff(win, COLOR_PAIR(5));
+        mvwprintw(win, i + 3, 1, "%s", *trophy_ptr);
+        i++;
+    }
+    // wattroff(win, COLOR_PAIR(5));
+
+    wnoutrefresh(win);
 }
 
 void RenderRIP(int x, int y) {
@@ -148,12 +198,20 @@ void RenderRIP(int x, int y) {
     char buffer[55];
     TrimString(logged_in_user->username, buffer);
     mvwprintw(win, 9, (58 - strlen(buffer)) / 2, "%s", buffer);
-    TrimString(game.killer ? game.killer->type->name : "p. of Rotten Food", buffer);
+
+    if (game.killer == 0)
+        TrimString("p. of Rotten Food", buffer);
+    else if (game.killer == (Enemy *)2) {
+        mvwaddch(win, 11, 33, ' ');
+        TrimString("HUNGER", buffer);
+    }
+    else {
+        if (game.killer->type->id == EnemyType_Undead)
+            mvwaddch(win, 11, 34, 'n');
+        TrimString(game.killer->type->name, buffer);
+    }
+
     mvwprintw(win, 12, (58 - strlen(buffer)) / 2, "%s", buffer);
-
-    if (game.killer && game.killer->type->id == EnemyType_Undead)
-        mvwaddch(win, 11, 34, 'n');
-
     wnoutrefresh(win);
 }
 
@@ -167,8 +225,12 @@ void GameScreenRender(void *selfv) {
     UpdateMessageBar(false);
     RenderMap(x, y);
 
-    if (game.over)
-        RenderRIP(x, y);
+    if (game.over) {
+        if (game.won)
+            RenderYouWon(x, y);
+        else
+            RenderRIP(x, y);
+    }
 
     doupdate();
 }

@@ -10,13 +10,23 @@
 void DeserializeGame(FILE *file, Game *game);
 
 void PregameScreenInit(PregameScreen *self) {
-    self->menu.n_entries = 4;
+    self->menu.n_entries = 5;
     self->menu.entries = malloc(self->menu.n_entries * sizeof(char *));
     self->menu.entries[0] = "   New  Game   ";
-    self->menu.entries[1] = "   Load Game   ";
+    // self->menu.entries[1] = "   Load Game   ";
     self->menu.entries[2] = "   Scoreboard  ";
-    self->menu.entries[3] = "     Logout    ";
+    self->menu.entries[3] = "    Settings   ";
+    self->menu.entries[4] = "     Logout    ";
     self->menu.selected = 0;
+}
+
+void PregameScreenSwitch(void *selfv) {
+    PregameScreen *self = (PregameScreen *)selfv;
+
+    if (logged_in_user->has_save)
+        self->menu.entries[1] = "   Load Game   ";
+    else
+        self->menu.entries[1] = " No game saved ";
 }
 
 int PregameScreenHandleInput(void *selfv, int input) {
@@ -33,16 +43,21 @@ int PregameScreenHandleInput(void *selfv, int input) {
             return 4;
         case 1:
             {
-                char filename[100];
-                sprintf(filename, "%s-save.data", logged_in_user->username);
-                FILE *file = fopen(filename, "rb");
-                DeserializeGame(file, &game);
-                fclose(file);
-                return 4;
+                if (logged_in_user->has_save) {
+                    char filename[100];
+                    sprintf(filename, "%s-save.data", logged_in_user->username);
+                    FILE *file = fopen(filename, "rb");
+                    DeserializeGame(file, &game);
+                    fclose(file);
+                    return 4;
+                }
+                break;
             }
         case 2:
             return 5;
         case 3:
+            return 6;
+        case 4:
             logged_in_user = NULL;
             return 0;
         default:

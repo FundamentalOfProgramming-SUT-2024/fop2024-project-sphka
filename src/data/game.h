@@ -54,17 +54,20 @@ typedef struct Player {
     uint8_t anchor;
 } Player;
 
-#define EVERY(n) ((game.clock + 1) % n == 0)
+#define EVERY(n) ((game.clock + 1) % (n) == 0)
 typedef struct Game {
     Player player;
     unsigned clock;
     bool skip_next_pickup;
 
     int floor_id;
-    Floor floors[FLOOR_COUNT];
+    Floor floors[FLOOR_COUNT + 1];
     bool map_revealed;
 
+    unsigned difficulty;
+
     bool over;
+    bool won;
     Enemy *killer;
 } Game;
 

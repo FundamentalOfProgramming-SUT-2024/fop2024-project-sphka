@@ -14,6 +14,8 @@ typedef struct User {
     int gold_sum;
     int game_count;
     unsigned long long first_game_time;
+
+    bool has_save;
 } User;
 
 extern User *logged_in_user;

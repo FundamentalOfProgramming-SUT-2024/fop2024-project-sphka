@@ -136,25 +136,32 @@ User **LoadUsers(char *filename, int *n_users) {
     if (file == NULL)
         return NULL;
 
+    int temp;
+    char *buffer = malloc(1000);
+    fgets(buffer, 1000, file);
+    sscanf(buffer, "%d", &temp);
+    guest.has_save = temp;
+
     User **users = malloc(sizeof(User *));
 
-    char *buffer = malloc(1000);
     while (fgets(buffer, 1000, file)) {
         users = realloc(users, (user + 1) * sizeof(User *));
         users[user] = malloc(sizeof(User));
+        User *u = users[user];
 
         int field = 0;
         for (char *tok = strtok(buffer, "\t"); tok; tok = strtok(NULL, "\t")) {
             switch (field)
             {
-            case 0: strcpy(users[user]->username, tok); break;
-            case 1: strcpy(users[user]->email, tok); break;
-            case 2: strcpy(users[user]->password, tok); break;
+            case 0: strcpy(u->username, tok); break;
+            case 1: strcpy(u->email, tok); break;
+            case 2: strcpy(u->password, tok); break;
 
-            case 3: sscanf(tok, "%d", &users[user]->score_sum); break;
-            case 4: sscanf(tok, "%d", &users[user]->gold_sum); break;
-            case 5: sscanf(tok, "%d", &users[user]->game_count); break;
-            case 6: sscanf(tok, "%llu", &users[user]->first_game_time); break;
+            case 3: sscanf(tok, "%d", &u->score_sum); break;
+            case 4: sscanf(tok, "%d", &u->gold_sum); break;
+            case 5: sscanf(tok, "%d", &u->game_count); break;
+            case 6: sscanf(tok, "%llu", &u->first_game_time); break;
+            case 7: sscanf(tok, "%d", &temp); u->has_save = temp; break;
 
             default:
                 break;
@@ -163,7 +170,7 @@ User **LoadUsers(char *filename, int *n_users) {
             field++;
         }
 
-        fprintf(stdout, "User { u='%s', e='%s', p='%s', s=%d }\n", users[user]->username, users[user]->email, users[user]->password, users[user]->score_sum);
+        fprintf(stdout, "User { u='%s', e='%s', p='%s', s=%d, has_save=%d }\n", u->username, u->email, u->password, u->score_sum, u->has_save);
 
         user++;
     }
@@ -177,6 +184,8 @@ int WriteUsers(char *filename, User **users, int n_users) {
     if (file == NULL)
         return -1;
 
+    fprintf(file, "%d\n", (int) guest.has_save);
+
     for (int i = 0; i < n_users; i++) {
         User *u = users[i];
         fprintf(file, "%s\t%s\t%s\t", u->username, u->email, u->password);
@@ -184,7 +193,8 @@ int WriteUsers(char *filename, User **users, int n_users) {
         fprintf(file, "%d\t", u->score_sum);
         fprintf(file, "%d\t", u->gold_sum);
         fprintf(file, "%d\t", u->game_count);
-        fprintf(file, "%llu\n", u->first_game_time);
+        fprintf(file, "%llu\t", u->first_game_time);
+        fprintf(file, "%d\n", (int) u->has_save);
     }
 
     fflush(file);

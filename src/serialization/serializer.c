@@ -27,6 +27,10 @@ void SerializeItem(FILE *file, const Item *item) {
         fwrite_exact(file, sizeof(FoodType), (char *) &item->ex_food.type);
         break;
     
+    case ItemCategory_Potion:
+        fwrite_exact(file, sizeof(FoodType), (char *) &item->ex_potion.type);
+        break;
+
     default:
         break;
     }
@@ -70,7 +74,7 @@ void SerializeGame(FILE *file, const Game *game) {
     SerializePlayer(file, &game->player);
     fwrite_exact(file, ((char *) game->floors) - ((char *) &game->clock), (char *) &game->clock);
 
-    for (int i = 0; i < FLOOR_COUNT; i++) {
+    for (int i = 0; i < FLOOR_COUNT + 1; i++) {
         SerializeFloor(file, &game->floors[i]);
     }
 
