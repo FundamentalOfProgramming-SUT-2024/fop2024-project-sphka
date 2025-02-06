@@ -66,7 +66,11 @@ void NewGame() {
 
     GenerateTreasureRoom(&game.floors[FLOOR_COUNT]);
 
-    InitPlayer(&game.player, GetRandomCoord(&CURRENT_FLOOR));
+    Coord player_coord;
+    do {
+        player_coord = GetRandomCoord(&CURRENT_FLOOR);
+    } while (GetCoordRoom(&CURRENT_FLOOR, player_coord) == GetCoordRoom(&CURRENT_FLOOR, CURRENT_FLOOR.down_stairs));
+    InitPlayer(&game.player, player_coord);
     Discover(&CURRENT_FLOOR, game.player.coord);
 }
 
